@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 import boto3
 from dataclasses import dataclass
+from pathlib import Path
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -49,7 +50,45 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-# Initialize AWS clients
+# SHEETS
+SELECTED_ASSISTANTS_RANGE = "CONSOLE!B2"
+TAKE_IMAGE_RANGE = "CONSOLE!B3"
+SEPARATED_RANGE = "CONSOLE!B4"
+NUMBER_OF_IMAGES_RANGE = "CONSOLE!B5"
+USER_PROMPT_RANGE = "CONSOLE!B6"
+OUTPUT_START_RANGE = "CONSOLE!B13"
+ALL_ASSISTANTS_START_RANGE = "ASSISTANTS!B2"
+SPREADSHEET_ID = "1JYgYUtiU_esPVGJvFZVGHv-7MvT_TikTYPhIRk0q5WU"
+
+# OPENAI API Configuration
+API_KEY = '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'
+MODEL = "gpt-4o" #"o1-2024-12-17" 
+MAX_TOKENS = 3000
+IMAGE_DETAIL = 'high'
+
+# IMAGE APIS
+IMAGE_HOST = 'imgbb'
+# IMGBB_API_KEY = '889403688da9752cdcf6652b3a95e782' # 0dte.profittaker@gmail.com
+IMGBB_API_KEY = '59bcbab1d5f5bd97f0f52d8938774b6d' #mikegandia@gmail.com
+
+CLOUDINARY_API_KEY = '136731118342719'
+CLOUDINARY_API_SECRET = 'GX2EtXhMLkQawL913hTTednhFx0'
+CLOUDINARY_CLOUD_NAME = 'dq3kbm7u9'
+
+
+# POLYGON API
+POLYGON_API_KEY = 'vVQsLiYKJTAnW4l4_qgx67RJMzTirVI8' # pt accnt polygon'
+
+PROJECT_ROOT = Path(__file__).parent / "trading_view_extension" 
+
+SHEETS_FOLDER = PROJECT_ROOT / "sheets"
+SERVICE_ACCOUNT_PATH = SHEETS_FOLDER / "service_account.json"# Initialize AWS clients
+
+CHROME_DRIVER_PATH = PROJECT_ROOT / "screen_shot/chromedriver-mac-arm64/chromedriver"
+SCREENSHOTS_FOLDER = PROJECT_ROOT / "screen_shot/Screenshots"
+TEMP_SCREENSHOT_FOLDER = PROJECT_ROOT / "screen_shot/temp"
+DEBUG_PORT = "9223"
+
 sqs_client = boto3.client(
     'sqs',
     aws_access_key_id=AWS_ACCESS_KEY_ID,

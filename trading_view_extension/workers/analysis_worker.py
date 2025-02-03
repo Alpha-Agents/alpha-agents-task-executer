@@ -3,6 +3,7 @@ import json
 from config import logger, input_tasks_queue
 from trading_view_extension.queue.sqs_queue_consumer import SqsQueueConsumer
 from trading_view_extension.orchestrators.ai_orchestrator import AiOrchestrator
+from trading_view_extension.services.structured_output_service import StructuredOutputService
 
 class AnalysisWorker:
     """
@@ -46,4 +47,4 @@ class AnalysisWorker:
         logger.info(f"Processing job: {msg_id}")
         if self.orchestrator:
             data = json.loads(job.get("Body", "{}"))
-            await self.orchestrator.handle_job(data)  # Adapt to your orchestrator’s API
+            await self.orchestrator.handle_job(data)

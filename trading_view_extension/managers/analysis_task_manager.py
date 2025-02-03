@@ -26,18 +26,40 @@ class AnalysisTaskManager:
         """
         Publish a new analysis job to the “analysis-tasks” queue.
         """
+        # job = {
+        #     "task_type": "analysis_task",
+        #     "job_id": job_id,
+        #     "user_id": user_id,
+        #     "tab_id": tab_id,
+        #     "s3_urls": s3_urls,
+        #     "agent": agent,
+        #     "action_type": action_type,
+        #     "status": status,
+        #     "websocket_id": websocket_id,
+        #     "filenames" : filenames,
+        #     "file_paths":file_paths
+        # }
+        # job = {
+        #     "task_type": "analysis_task",
+        #     "job_id": job_id,
+        #     "s3_urls": s3_urls,
+        #     "user_query": "Analyze these images for trade insights.",  # Adding a user prompt
+        #     "agent": agent,
+        #     "user_id": user_id,
+        #     "action_type": action_type,
+        #     "status": status,
+        #     "websocket_id": websocket_id,
+        #     "filenames" : filenames,
+        #     "file_paths":file_paths,
+        #     "tab_id": tab_id,
+        # }
         job = {
             "task_type": "analysis_task",
             "job_id": job_id,
-            "user_id": user_id,
-            "tab_id": tab_id,
             "s3_urls": s3_urls,
+            "user_query": "Identify trading opportunities from the given data.",  # Add user query
             "agent": agent,
-            "action_type": action_type,
-            "status": status,
-            "websocket_id": websocket_id,
-            "filenames" : filenames,
-            "file_paths":file_paths
         }
+
         await self.queue_publisher.publish_task(job)
         logger.info(f"Published analysis task for job {job_id}")

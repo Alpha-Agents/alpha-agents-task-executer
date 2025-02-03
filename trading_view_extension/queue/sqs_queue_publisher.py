@@ -21,6 +21,43 @@ class SQSQueuePublisher(IQueuePublisher):
             logger.exception("Failed to initialize SQS clients.")
             raise
 
+    # async def publish_task(self, job: dict) -> None:
+    #     """
+    #     Publish a message to the appropriate SQS FIFO queue based on the action_type.
+
+    #     Args:
+    #         job (dict): The data to send in the message.
+    #     """
+    #     try:
+    #         action_type = job.get("action_type")
+    #         if action_type == "analysis":
+    #             client = self.input_sqs_client
+    #             queue_url = input_tasks_queue.url
+    #             message_group_id = "analysis_tasks"
+    #         elif action_type == "processed":
+    #             client = self.output_sqs_client
+    #             queue_url = output_tasks_queue.url
+    #             message_group_id = "processed_tasks"
+    #         else:
+    #             logger.warning(f"Unknown action_type '{action_type}'. Defaulting to input_tasks_queue.")
+    #             client = self.input_sqs_client
+    #             queue_url = input_tasks_queue.url
+    #             message_group_id = "analysis_tasks"
+
+    #         message_deduplication_id = str(uuid.uuid4())
+    #         message_body = json.dumps(job)
+    #         response = client.send_message(
+    #             QueueUrl=queue_url,
+    #             MessageBody=message_body,
+    #             MessageGroupId=message_group_id,
+    #             MessageDeduplicationId=message_deduplication_id
+    #         )
+
+    #         logger.info(f"Message sent to SQS ({action_type}) with MessageId: {response.get('MessageId')}")
+    #     except Exception as e:
+    #         logger.exception("Failed to publish message to SQS.")
+    #         raise
+
     async def publish_task(self, job: dict) -> None:
         """
         Publish a message to the appropriate SQS FIFO queue based on the action_type.
@@ -45,6 +82,11 @@ class SQSQueuePublisher(IQueuePublisher):
                 message_group_id = "analysis_tasks"
 
             message_deduplication_id = str(uuid.uuid4())
+
+            if "trade_signal" not in job and "result" in job:
+                job["trade_signal"] = job["result"]  # Assuming 'result' contains the AI response
+
+            # Convert the job dictionary to a JSON string
             message_body = json.dumps(job)
 
             response = client.send_message(
