@@ -2,7 +2,7 @@ import sys
 import time
 from pathlib import Path
 from datetime import datetime
-
+import json
 # Ensure local modules (config, sheet_utils, etc.) are importable
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -21,6 +21,7 @@ from services.openai_service import OpenAIService
 from services.image_service import upload_images
 from services.structured_output_service import StructuredOutputService
 from screen_shot.screenshot import take_screenshot
+from services.structured_output_service import StructuredOutputService
 
 # -------------------------------------------------------------------
 # Retrieve / update assistant instructions
@@ -117,9 +118,9 @@ class GPTClient:
     #                 self.client.beta.threads.delete(thread_id)
     #             except Exception as e:
     #                 print(f"Error deleting thread {thread_id}: {e}")
-    from services.structured_output_service import StructuredOutputService
 
-    def ask_assistant(self, assistant_id: str, user_text: str, image_urls: list) -> str:
+    def ask_assistant(self, assistant_id: str, user_text: str, image_urls: list) -> dict:
+        """Sends query to OpenAI and ensures structured JSON response"""
         thread_id = None
         try:
             thread = self.client.beta.threads.create()
@@ -130,27 +131,31 @@ class GPTClient:
             run = self.client.beta.threads.runs.create(
                 thread_id=thread_id,
                 assistant_id=assistant_id,
-                max_completion_tokens=MAX_TOKENS
+                max_completion_tokens=MAX_TOKENS,
+                response_format="auto"  # Ensure JSON format
             )
             run_id = run.id
 
             response = self.openai_service.wait_for_run(run_id, thread_id)
 
-            # Ensure response is processed by structured_output_service.py
             structured_service = StructuredOutputService(self.client)
             structured_response = structured_service.get_trade_signal(response)
 
             if structured_response:
-                logger.info(f"Successfully extracted trade signal: {structured_response.dict()}")
-                return structured_response.dict()  #Return JSON response
-            else:
-                logger.error(f"AI response did not contain structured output! {response}")
-                return {"error": "AI did not return structured output"}
+                structured_data =  [{
+                    "image_url": image_urls,  # Ensure image is correctly mapped
+                    "analysis": structured_response.dict()  # Structured trade signal
+                }]
+
+                logger.info(f"Successfully extracted trade signal: {structured_data}")
+                return structured_data
+
+            logger.error(f"AI response did not contain structured output! {response}")
+            return {"error": "AI did not return structured output"}
 
         except Exception as e:
-            logger.error(f" Error interacting with assistant {assistant_id}: {e}")
+            logger.error(f"Error interacting with assistant {assistant_id}: {e}")
             return {"error": str(e)}
-
 
     # --------------------------
     # Async / Parallel Helpers

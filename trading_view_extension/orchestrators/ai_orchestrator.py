@@ -26,7 +26,7 @@ class AiOrchestrator:
 
     async def handle_job(self, job):
         logger.info(f"Processing job: {job}")
-        user_query = job.get("user_query", "Analyze this data.")
+        user_query = job.get("user_query", "Analyze this stock/crypto and provide a trade signal. Also, extract the name of the asset being analyzed.")
         image_urls = job.get("s3_urls", [])
         response = self.gpt_client.ask_assistant(
             assistant_id=self.assistant_id,
@@ -37,7 +37,6 @@ class AiOrchestrator:
         job["status"] = "COMPLETED"
         job["result"] = response
         job["action_type"] = "processed"
-
         await self.sqs_queue_publisher.publish_task(job)
 
         

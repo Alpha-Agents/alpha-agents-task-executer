@@ -17,6 +17,7 @@ client = OpenAI(api_key=API_KEY)
 
 # Define the schema for structured output
 class TradeSignal(BaseModel):
+    share_name: str = Field(..., description="The name of the stock, commodity, or cryptocurrency being analyzed.")
     action: str = Field(..., description="The trade action: BUY, SELL, or HOLD")
     current_price: float | None = Field(None, description="The current price which will also be the entry or exit price if applicable")
     stop_loss: float | None = Field(None, description="Stop loss price if applicable")
@@ -58,11 +59,12 @@ class StructuredOutputService:
                 model=MODEL,
                 messages=[
                         {"role": "system", "content": """Extract the trade signal from this message.
-                        **YOU MUST RETURN ONLY JSON. DO NOT RETURN ANY TEXT, EXPLANATION, OR MARKDOWN.** 🚨  
+                        **YOU MUST RETURN ONLY JSON. DO NOT RETURN ANY TEXT, EXPLANATION, OR MARKDOWN.** 
                         The response **MUST** be a valid JSON object with this exact format:
 
                         ```json
                         {
+                            "share_name": "Bitcoin (BTC/USD)",  
                             "action": "BUY",  // or "SELL" or "HOLD"
                             "current_price": 350.0,
                             "stop_loss": 345.0,
