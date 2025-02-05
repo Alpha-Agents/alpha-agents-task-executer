@@ -140,6 +140,7 @@ class GPTClient:
 
             structured_service = StructuredOutputService(self.client)
             structured_response = structured_service.get_trade_signal(response)
+            self.delete_thread(thread_id)
 
             if structured_response:
                 structured_data =  [{
