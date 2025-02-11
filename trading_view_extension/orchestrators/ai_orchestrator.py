@@ -27,6 +27,23 @@ class AiOrchestrator:
     async def handle_job(self, job):
         logger.info(f"Processing job: {job}")
         user_query = job.get("user_query", "Analyze this stock/crypto and provide a trade signal. Also, extract the name of the asset being analyzed.")
+        user_query = """Extract the trade signal from this message.
+                ONLY return a valid JSON object. **DO NOT** include markdown, explanations, or any extra text.
+                The response **MUST** match this exact format, replacing placeholders with actual values:
+
+                {
+                    "asset": "<asset_name>",  // Example: "Bitcoin/USD - BITSTAMP"
+                    "action": "<BUY/SELL/WAIT>",  // Choose one based on analysis
+                    "current_price": <current_price>,  // Current price as a number
+                    "stop_loss": <stop_loss>,  // Stop loss price as a number
+                    "take_profit": <take_profit>,  // Take profit price as a number
+                    "confidence": <confidence>,  // Confidence level (1 to 10)
+                    "R2R": <risk_to_reward_ratio>  // Risk to Reward Ratio (e.g., 1.5, 2.5)
+                }
+
+                DO NOT wrap the response in ```json or ``` marks. **JUST RETURN RAW JSON.**
+                Replace placeholders with actual values from the trade analysis."""
+
         image_urls = job.get("s3_urls", [])
         response = self.gpt_client.ask_assistant(
             assistant_id=self.assistant_id,

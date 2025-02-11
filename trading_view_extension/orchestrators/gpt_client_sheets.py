@@ -8,15 +8,15 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from openai import OpenAI
 from config import API_KEY, MAX_TOKENS, IMAGE_DETAIL, IMAGE_HOST, SPREADSHEET_ID, logger
-from utils.sheet_utils import (
-    get_selected_assistants_ids_prompts,
-    get_is_take_image,
-    get_number_of_images,
-    get_user_prompt,
-    get_is_separated,
-    write_structured_signal,
-    clear_output_range
-)
+# from utils.sheet_utils import (
+#     get_selected_assistants_ids_prompts,
+#     get_is_take_image,
+#     get_number_of_images,
+#     get_user_prompt,
+#     get_is_separated,
+#     write_structured_signal,
+#     clear_output_range
+# )
 from services.openai_service import OpenAIService
 from services.image_service import upload_images
 from services.structured_output_service import StructuredOutputService
@@ -141,16 +141,15 @@ class GPTClient:
                 )
                 run_id = run.id
 
-                response = self.openai_service.wait_for_run(run_id, thread_id)
-                structured_response = structured_service.get_trade_signal(response)
+                structured_response = self.openai_service.wait_for_run(run_id, thread_id)
 
                 return {
                     "combined": True,
                     "assistant_id": assistant_id,
                     "image_urls": image_urls,
-                    "results": [  
+                    "results": [
                         {
-                            "analysis": structured_response.dict() if structured_response else [{"error": "No structured output"}]
+                            "analysis": structured_response if structured_response else [{"error": "No structured output"}]
                         }
                     ]
                 }
@@ -173,20 +172,19 @@ class GPTClient:
                 )
                 run_id = run.id
 
-                img_response = self.openai_service.wait_for_run(run_id, thread_id)
-                structured_response = structured_service.get_trade_signal(img_response)
+                structured_response = self.openai_service.wait_for_run(run_id, thread_id)
 
                 responses.append({
                     "image_index": idx,
                     "image_url": image_url,
-                    "analysis": structured_response.dict() if structured_response else [{"error": "No structured output"}]
+                    "analysis": structured_response if structured_response else [{"error": "No structured output"}]
                 })
 
             logger.info(f"Processed separate image responses for {assistant_id}")
             return {
                 "combined": False,
                 "assistant_id": assistant_id,
-                "results": responses  
+                "results": responses
             }
 
         except Exception as e:
@@ -455,100 +453,100 @@ def run_parallel_queries(
 # main
 # -------------------------------------------------------------------
 
-def main():
-    # 1. Initialize
-    gpt_client = GPTClient()
-    client = gpt_client.client
+# def main():
+#     # 1. Initialize
+#     gpt_client = GPTClient()
+#     client = gpt_client.client
     
-    # ** Initialize StructuredOutputService **
-    structured_service = StructuredOutputService(client)
+#     # ** Initialize StructuredOutputService **
+#     structured_service = StructuredOutputService(client)
 
-    # 2. Pull data from Google Sheet
-    assistant_ids, assistant_prompts, assistant_titles = get_selected_assistants_ids_prompts()
-    user_query = get_user_prompt()
-    is_take_image = get_is_take_image()
-    num_images = get_number_of_images() if is_take_image else 0
-    is_separated = get_is_separated()
+#     # 2. Pull data from Google Sheet
+#     assistant_ids, assistant_prompts, assistant_titles = get_selected_assistants_ids_prompts()
+#     user_query = get_user_prompt()
+#     is_take_image = get_is_take_image()
+#     num_images = get_number_of_images() if is_take_image else 0
+#     is_separated = get_is_separated()
 
-    # 3. Capture & upload images once
-    image_urls = capture_and_upload_images(num_images)
+#     # 3. Capture & upload images once
+#     image_urls = capture_and_upload_images(num_images)
 
-    # 4. Update instructions if needed
-    for assistant_id, new_instructions, title in zip(assistant_ids, assistant_prompts, assistant_titles):
-        details = get_assistant_details(client, assistant_id)
-        if not details:
-            print(f"Could not retrieve details for {title}, skipping update.")
-            continue
+#     # 4. Update instructions if needed
+#     for assistant_id, new_instructions, title in zip(assistant_ids, assistant_prompts, assistant_titles):
+#         details = get_assistant_details(client, assistant_id)
+#         if not details:
+#             print(f"Could not retrieve details for {title}, skipping update.")
+#             continue
 
-        current_instructions = (details.instructions or "").strip()
-        desired_instructions = new_instructions.strip()
-        if current_instructions != desired_instructions:
-            print(f"[{assistant_id}] Updating instructions ...")
-            update_assistant_instructions(client, assistant_id, desired_instructions)
-        else:
-            print(f"[{assistant_id}] Instructions already up to date.")
+#         current_instructions = (details.instructions or "").strip()
+#         desired_instructions = new_instructions.strip()
+#         if current_instructions != desired_instructions:
+#             print(f"[{assistant_id}] Updating instructions ...")
+#             update_assistant_instructions(client, assistant_id, desired_instructions)
+#         else:
+#             print(f"[{assistant_id}] Instructions already up to date.")
 
-    # 5. Run in parallel (either separate or combined)
-    print("\nStarting parallel runs...")
-    results = run_parallel_queries(
-        gpt_client=gpt_client,
-        assistant_ids=assistant_ids,
-        user_query=user_query,
-        image_urls=image_urls,
-        is_separated=is_separated,
-        max_wait=300,   # 5 minutes
-        max_retries=1
-    )
+#     # 5. Run in parallel (either separate or combined)
+#     print("\nStarting parallel runs...")
+#     results = run_parallel_queries(
+#         gpt_client=gpt_client,
+#         assistant_ids=assistant_ids,
+#         user_query=user_query,
+#         image_urls=image_urls,
+#         is_separated=is_separated,
+#         max_wait=300,   # 5 minutes
+#         max_retries=1
+#     )
     
-    clear_output_range()
+#     clear_output_range()
 
-    # Example variable to track how many structured outputs we have written
-    structured_output_count = 0
+#     # Example variable to track how many structured outputs we have written
+#     structured_output_count = 0
 
-    print("\n=== FINAL RESULTS ===")
-    if not is_separated:
-        # results is {assistant_id: single_string}
-        for assistant_id, title in zip(assistant_ids, assistant_titles):
-            resp = results.get(assistant_id, "No response found.")
-            print(f"\nAssistant: {assistant_id} ({title})")
-            print(f"Raw Response:\n{resp}\n")
+#     print("\n=== FINAL RESULTS ===")
+#     if not is_separated:
+#         # results is {assistant_id: single_string}
+#         for assistant_id, title in zip(assistant_ids, assistant_titles):
+#             resp = results.get(assistant_id, "No response found.")
+#             print(f"\nAssistant: {assistant_id} ({title})")
+#             print(f"Raw Response:\n{resp}\n")
 
-            # Try parsing structured output
-            signal = structured_service.get_trade_signal(resp)
-            if signal:
-                print("Structured Output:")
-                print(signal.dict())
+#             # Try parsing structured output
+#             signal = structured_service.get_trade_signal(resp)
+#             if signal:
+#                 print("Structured Output:")
+#                 print(signal.dict())
 
-                # Write to Google Sheet, shifting one column per structured output
-                write_structured_signal(SPREADSHEET_ID, title, signal, structured_output_count)
-                structured_output_count += 1
-            else:
-                print("No structured output found.")
-    else:
-        # results is {assistant_id: list_of_strings}, one per image
-        for assistant_id, title in zip(assistant_ids, assistant_titles):
-            responses = results.get(assistant_id, [])
-            print(f"\nAssistant: {assistant_id} ({title})")
+#                 # Write to Google Sheet, shifting one column per structured output
+#                 write_structured_signal(SPREADSHEET_ID, title, signal, structured_output_count)
+#                 structured_output_count += 1
+#             else:
+#                 print("No structured output found.")
+#     else:
+#         # results is {assistant_id: list_of_strings}, one per image
+#         for assistant_id, title in zip(assistant_ids, assistant_titles):
+#             responses = results.get(assistant_id, [])
+#             print(f"\nAssistant: {assistant_id} ({title})")
 
-            for idx, r in enumerate(responses):
-                print(f"Response for image #{idx+1}:\n{r}\n")
+#             for idx, r in enumerate(responses):
+#                 print(f"Response for image #{idx+1}:\n{r}\n")
 
-                # Try parsing
-                signal = structured_service.get_trade_signal(r)
-                if signal:
-                    print("Structured Output:")
-                    print(signal.dict())
+#                 # Try parsing
+#                 signal = structured_service.get_trade_signal(r)
+#                 if signal:
+#                     print("Structured Output:")
+#                     print(signal.dict())
 
-                    # Write to Google Sheet
-                    write_structured_signal(SPREADSHEET_ID, title, signal, structured_output_count)
-                    structured_output_count += 1
-                else:
-                    print("No structured output found.")
+#                     # Write to Google Sheet
+#                     write_structured_signal(SPREADSHEET_ID, title, signal, structured_output_count)
+#                     structured_output_count += 1
+#                 else:
+#                     print("No structured output found.")
                 
-                print("--------")
+#                 print("--------")
 
-    print("Done.")
+#     print("Done.")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
