@@ -53,16 +53,19 @@ class OpenAIService:
                 if not response_text:
                     return {"error": "AI returned an empty response."}
 
-                # Ensure `re` module is imported and remove markdown JSON formatting if present
+                # Remove markdown formatting if present
                 cleaned_text = re.sub(r'```json|```', '', response_text).strip()
 
-                # Try parsing JSON
+                # Fix invalid single quotes and parse JSON
+                cleaned_text = cleaned_text.replace("'", '"')  # Convert single quotes to double quotes
+
                 try:
                     return json.loads(cleaned_text)
                 except json.JSONDecodeError:
                     return {"error": "Invalid JSON format returned by AI.", "raw_response": cleaned_text}
 
         return {"error": "No assistant response received."}
+
 
     def send_user_message(self, thread_id: str, content, role: str = "user"):
         """Send a user or system message to the specified thread in JSON format."""
