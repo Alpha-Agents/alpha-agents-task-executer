@@ -17,8 +17,8 @@ client = OpenAI(api_key=API_KEY)
 
 # Define the schema for structured output
 class TradeSignal(BaseModel):
-    share_name: str = Field(..., description="The name of the stock, commodity, or cryptocurrency being analyzed.")
-    action: str = Field(..., description="The trade action: BUY, SELL, or HOLD")
+    asset: str = Field(..., description="The asset or stock name letters/ticker: XYZ")
+    action: str = Field(..., description="The trade action: BUY, SELL, or WAIT")
     current_price: float | None = Field(None, description="The current price which will also be the entry or exit price if applicable")
     stop_loss: float | None = Field(None, description="Stop loss price if applicable")
     take_profit: float | None = Field(None, description="Take profit price if applicable")
@@ -64,13 +64,14 @@ class StructuredOutputService:
 
                         ```json
                         {
-                            "share_name": "Bitcoin (BTC/USD)",  
-                            "action": "BUY",  // or "SELL" or "HOLD"
-                            "current_price": 350.0,
-                            "stop_loss": 345.0,
-                            "take_profit": 365.0,
-                            "confidence": 8.5,
-                            "R2R": 2.5
+                            "asset"": "stock name",  
+                            "action": "BUY",  // or "SELL" or "WAIT"
+                            "current_price": Current price,
+                            "stop_loss": Stop Loss price,
+                            "take_profit": Price at which profit should be booked,
+                            "confidence": confidence between 1 to 10,
+                            "R2R": Risk to Reward Ratio (1.5, 2.5)
+
                         }"""
                        },
                        {"role": "user", "content": user_text},

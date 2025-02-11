@@ -119,44 +119,83 @@ class GPTClient:
     #             except Exception as e:
     #                 print(f"Error deleting thread {thread_id}: {e}")
 
-    def ask_assistant(self, assistant_id: str, user_text: str, image_urls: list) -> dict:
-        """Sends query to OpenAI and ensures structured JSON response"""
+    def ask_assistant(self, assistant_id: str, user_text: str, image_urls: list, combined: bool) -> dict:
+        """Sends query to OpenAI and ensures structured JSON response."""
         thread_id = None
+        structured_service = StructuredOutputService(self.client)
+
         try:
-            thread = self.client.beta.threads.create()
-            thread_id = thread.id
-            content_blocks = self.build_message_content(user_text, image_urls)
-            self.openai_service.send_user_message(thread_id, content_blocks, role="user")
+            if combined:
+                logger.info(f"Processing combined request for {assistant_id} with {len(image_urls)} images.")
+                thread = self.client.beta.threads.create()
+                thread_id = thread.id
+                content_blocks = self.build_message_content(user_text, image_urls)
 
-            run = self.client.beta.threads.runs.create(
-                thread_id=thread_id,
-                assistant_id=assistant_id,
-                max_completion_tokens=MAX_TOKENS,
-                response_format="auto"  # Ensure JSON format
-            )
-            run_id = run.id
+                self.openai_service.send_user_message(thread_id, content_blocks, role="user")
 
-            response = self.openai_service.wait_for_run(run_id, thread_id)
+                run = self.client.beta.threads.runs.create(
+                    thread_id=thread_id,
+                    assistant_id=assistant_id,
+                    max_completion_tokens=MAX_TOKENS,
+                    response_format="auto"
+                )
+                run_id = run.id
 
-            structured_service = StructuredOutputService(self.client)
-            structured_response = structured_service.get_trade_signal(response)
-            self.delete_thread(thread_id)
+                response = self.openai_service.wait_for_run(run_id, thread_id)
+                structured_response = structured_service.get_trade_signal(response)
 
-            if structured_response:
-                structured_data =  [{
-                    "image_url": image_urls,  # Ensure image is correctly mapped
-                    "analysis": structured_response.dict()  # Structured trade signal
-                }]
+                return {
+                    "combined": True,
+                    "assistant_id": assistant_id,
+                    "image_urls": image_urls,
+                    "results": [  
+                        {
+                            "analysis": structured_response.dict() if structured_response else [{"error": "No structured output"}]
+                        }
+                    ]
+                }
 
-                logger.info(f"Successfully extracted trade signal: {structured_data}")
-                return structured_data
+            # --- Process Separate Images ---
+            logger.info(f"Processing separate image requests for {assistant_id}")
+            responses = []
+            for idx, image_url in enumerate(image_urls):
+                thread = self.client.beta.threads.create()
+                thread_id = thread.id
+                content_blocks = self.build_message_content(user_text, [image_url])
 
-            logger.error(f"AI response did not contain structured output! {response}")
-            return {"error": "AI did not return structured output"}
+                self.openai_service.send_user_message(thread_id, content_blocks, role="user")
+
+                run = self.client.beta.threads.runs.create(
+                    thread_id=thread_id,
+                    assistant_id=assistant_id,
+                    max_completion_tokens=MAX_TOKENS,
+                    response_format="auto"
+                )
+                run_id = run.id
+
+                img_response = self.openai_service.wait_for_run(run_id, thread_id)
+                structured_response = structured_service.get_trade_signal(img_response)
+
+                responses.append({
+                    "image_index": idx,
+                    "image_url": image_url,
+                    "analysis": structured_response.dict() if structured_response else [{"error": "No structured output"}]
+                })
+
+            logger.info(f"Processed separate image responses for {assistant_id}")
+            return {
+                "combined": False,
+                "assistant_id": assistant_id,
+                "results": responses  
+            }
 
         except Exception as e:
             logger.error(f"Error interacting with assistant {assistant_id}: {e}")
             return {"error": str(e)}
+
+        finally:
+            if thread_id:
+                self.delete_thread(thread_id)
 
     # --------------------------
     # Async / Parallel Helpers

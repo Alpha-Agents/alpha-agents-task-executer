@@ -31,7 +31,8 @@ class AiOrchestrator:
         response = self.gpt_client.ask_assistant(
             assistant_id=self.assistant_id,
             user_text=user_query,
-            image_urls=image_urls
+            image_urls=image_urls,
+            combined=True
         )
 
         job["status"] = "COMPLETED"
@@ -39,4 +40,3 @@ class AiOrchestrator:
         job["action_type"] = "processed"
         await self.sqs_queue_publisher.publish_task(job)
 
-        

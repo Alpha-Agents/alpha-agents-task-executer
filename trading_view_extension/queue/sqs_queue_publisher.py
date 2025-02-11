@@ -44,10 +44,14 @@ class SQSQueuePublisher(IQueuePublisher):
                 queue_url = input_tasks_queue.url
                 message_group_id = "analysis_tasks"
 
-            # Ensure 'result' contains properly formatted trade signal data
-            if "result" not in job or not isinstance(job["result"], list):
+            # Ensure 'result' is a LIST by extracting 'results' if present
+            if "result" in job and isinstance(job["result"], dict) and "results" in job["result"]:
+                job["result"] = job["result"]["results"]  # Extract the list directly
+                logger.info(f"Successfully extracted trade signal: {job["result"]}")
+            
+            if not isinstance(job["result"], list):
                 logger.error(f"Invalid result format in job: {job}")
-                job["result"] = []
+                job["result"] = []  # Default to an empty list to avoid breaking downstream
 
             # Generate a unique deduplication ID
             message_deduplication_id = str(uuid.uuid4())
