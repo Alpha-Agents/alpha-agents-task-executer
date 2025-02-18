@@ -29,36 +29,45 @@ class SQSQueuePublisher(IQueuePublisher):
             job (dict): The data to send in the message.
         """
         try:
-            action_type = job.get("action_type")
-            if action_type == "analysis":
-                client = self.input_sqs_client
-                queue_url = input_tasks_queue.url
-                message_group_id = "analysis_tasks"
-            elif action_type == "processed":
+            if job["status"] == "COMPLETED":
+                action_type = job.get("action_type")
+                if action_type == "analysis":
+                    client = self.input_sqs_client
+                    queue_url = input_tasks_queue.url
+                    message_group_id = "analysis_tasks"
+                elif action_type == "processed":
+                    client = self.output_sqs_client
+                    queue_url = output_tasks_queue.url
+                    message_group_id = "processed_tasks"
+                else:
+                    logger.warning(f"Unknown action_type '{action_type}'. Defaulting to input_tasks_queue.")
+                    client = self.input_sqs_client
+                    queue_url = input_tasks_queue.url
+                    message_group_id = "analysis_tasks"
+
+                # Ensure 'result' is a LIST by extracting 'results' if present
+                # if "result" in job and isinstance(job["result"], dict) and "results" in job["result"]:
+                #     job["result"] = job["result"]["results"]  # Extract the list directly
+                #     logger.info(f"Successfully extracted trade signal: {job["result"]}")
+                
+                # if not isinstance(job["result"], list):
+                #     logger.error(f"Invalid result format in job: {job}")
+                #     job["result"] = []  # Default to an empty list to avoid breaking downstream
+                # if "trade_signal" not in job and "result" in job:
+                #     job["trade_signal"] = job["result"]  # Assuming 'result' contains the AI response
+
+            elif job["status"] == "RUNNING":
                 client = self.output_sqs_client
                 queue_url = output_tasks_queue.url
-                message_group_id = "processed_tasks"
-            else:
-                logger.warning(f"Unknown action_type '{action_type}'. Defaulting to input_tasks_queue.")
-                client = self.input_sqs_client
-                queue_url = input_tasks_queue.url
                 message_group_id = "analysis_tasks"
-
-            # Ensure 'result' is a LIST by extracting 'results' if present
-            if "result" in job and isinstance(job["result"], dict) and "results" in job["result"]:
-                job["result"] = job["result"]["results"]  # Extract the list directly
-                logger.info(f"Successfully extracted trade signal: {job["result"]}")
-            
-            if not isinstance(job["result"], list):
-                logger.error(f"Invalid result format in job: {job}")
-                job["result"] = []  # Default to an empty list to avoid breaking downstream
+                action_type = "running"
 
             # Generate a unique deduplication ID
             message_deduplication_id = str(uuid.uuid4())
 
             # Convert the job to a JSON-safe format
             message_body = json.dumps(job, default=str)
-
+            logger.info(f"Message body: {message_body}")
             # Send the message to SQS
             response = client.send_message(
                 QueueUrl=queue_url,

@@ -19,7 +19,6 @@ from config import API_KEY, MAX_TOKENS, IMAGE_DETAIL, IMAGE_HOST, SPREADSHEET_ID
 # )
 from services.openai_service import OpenAIService
 from services.image_service import upload_images
-from services.structured_output_service import StructuredOutputService
 from screen_shot.screenshot import take_screenshot
 from services.structured_output_service import StructuredOutputService
 
