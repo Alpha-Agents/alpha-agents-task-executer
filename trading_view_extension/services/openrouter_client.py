@@ -7,6 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import re
 import requests
 from config import MODEL_NAME, CONSENSUS_MODEL, OPENROUTER_API_KEY, OPENROUTER_ENDPOINT, MAX_TOKENS
+from config import logger
 
 def query_openrouter(messages, consensus = False):
 
@@ -148,7 +149,7 @@ def get_trade_signal_from_history(conversation_history, asset):
 
     # Query the model (recommend consensus=False unless you explicitly want the consensus model)
     raw_response = query_openrouter(messages, consensus=True)
-
+    logger.info(f"raw response from openrouter: {raw_response}")
     # Remove any ```...``` fences (including ```json)
     cleaned = re.sub(r"```[\s\S]*?```", '', raw_response or "")
     cleaned = cleaned.strip()
@@ -156,7 +157,8 @@ def get_trade_signal_from_history(conversation_history, asset):
     # Now parse the remaining text as JSON
     try:
         data = json.loads(cleaned)
+        logger.info(f"cleaned data: {data}")
         return data
     except json.JSONDecodeError as e:
-        print("Error parsing JSON:", e)
+        logger.error("Error parsing JSON:", e)
         return {}

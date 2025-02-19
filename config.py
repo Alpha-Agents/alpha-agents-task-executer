@@ -187,7 +187,8 @@ MODEL_NAME = "google/gemini-2.0-flash-001"
 # MODEL_NAME = "amazon/nova-pro-v1"
 
 # CONSENSUS_MODEL = "deepseek/deepseek-r1:free"
-CONSENSUS_MODEL = "deepseek/deepseek-r1"
+# CONSENSUS_MODEL = "deepseek/deepseek-r1"
+CONSENSUS_MODEL = "google/gemini-2.0-pro-exp-02-05:free"
 CONSENSUS = True
 
 MAX_WORKERS = 10
