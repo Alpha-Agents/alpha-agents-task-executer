@@ -7,7 +7,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import re
 import requests
 from config import MODEL_NAME, CONSENSUS_MODEL, OPENROUTER_API_KEY, OPENROUTER_ENDPOINT, MAX_TOKENS
-from config import logger
 
 def query_openrouter(messages, consensus = False):
 
@@ -92,73 +91,72 @@ def get_consensus(conversation_history):
 
     return query_openrouter(messages, consensus=True)
 
-def get_trade_signal_from_history(conversation_history, asset):
-    """
-    Appends a system (or user) message asking for a structured trade signal
-    and re-queries the same model (MODEL_NAME).
-    Returns a dict with the trade signal fields.
-    """
-    # Convert existing history to OpenRouter format
-    messages = []
-    for msg in conversation_history:
-        messages.append({
-            "role": msg["role"],
-            "content": [{"type": "text", "text": msg["content"]}]
-        })
+# def get_trade_signal_from_history(conversation_history, asset):
+#     """
+#     Appends a system (or user) message asking for a structured trade signal
+#     and re-queries the same model (MODEL_NAME).
+#     Returns a dict with the trade signal fields.
+#     """
+#     # Convert existing history to OpenRouter format
+#     messages = []
+#     for msg in conversation_history:
+#         messages.append({
+#             "role": msg["role"],
+#             "content": [{"type": "text", "text": msg["content"]}]
+#         })
 
-    # Append a system instruction (or user instruction) to request the trade signal.
-    messages.append({
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": (
-                        f"""
-                You are a JSON generator. Your task is:
-                1. Read the entire conversation above to extract a trade signal for the asset {asset}.
-                2. Reply with a single **valid JSON** object, nothing else.
+#     # Append a system instruction (or user instruction) to request the trade signal.
+#     messages.append({
+#             "role": "system",
+#             "content": [
+#                 {
+#                     "type": "text",
+#                     "text": (
+#                         f"""
+#                 You are a JSON generator. Your task is:
+#                 1. Read the entire conversation above to extract a trade signal for the asset {asset}.
+#                 2. Reply with a single **valid JSON** object, nothing else.
 
-                **Do not** include any triple backticks (`) or code fences.
-                **Do not** include any explanatory text or surrounding text, only the JSON object.
+#                 **Do not** include any triple backticks (`) or code fences.
+#                 **Do not** include any explanatory text or surrounding text, only the JSON object.
 
-                The expected JSON structure is:
+#                 The expected JSON structure is:
 
-                {{
-                        "asset": "<asset_name>",  // Example: "BTCUSD"
-                        "action": "<BUY/SELL/WAIT>",  // Choose one based on analysis
-                        "current_price": <current_price>,  // Current price as a number
-                        "stop_loss": <stop_loss>,  // Stop loss price as a number
-                        "take_profit": <take_profit>,  // Take profit price as a number
-                        "confidence": <confidence>,  // Confidence level (1 to 10)
-                        "R2R": <risk_to_reward_ratio>  // Risk to Reward Ratio (e.g., 1.5, 2.5)
-                }}
+#                 {{
+#                         "asset": "<asset_name>",  // Example: "BTCUSD"
+#                         "action": "<BUY/SELL/WAIT>",  // Choose one based on analysis
+#                         "current_price": <current_price>,  // Current price as a number
+#                         "stop_loss": <stop_loss>,  // Stop loss price as a number
+#                         "take_profit": <take_profit>,  // Take profit price as a number
+#                         "confidence": <confidence>,  // Confidence level (1 to 10)
+#                         "R2R": <risk_to_reward_ratio>  // Risk to Reward Ratio (e.g., 1.5, 2.5)
+#                 }}
 
-                Replace placeholders with **actual** values. If you don't have enough info to fill a field, set it to null.
+#                 Replace placeholders with **actual** values. If you don't have enough info to fill a field, set it to null.
 
-                IMPORTANT:
-                - **No code blocks**. 
-                - **No triple backticks**. 
-                - **No extra text**. 
-                - **Only a valid JSON object**.
-                """
-                            )
-                        }
-                    ]
-                }
-        )
+#                 IMPORTANT:
+#                 - **No code blocks**. 
+#                 - **No triple backticks**. 
+#                 - **No extra text**. 
+#                 - **Only a valid JSON object**.
+#                 """
+#                             )
+#                         }
+#                     ]
+#                 }
+#         )
 
-    # Query the model (recommend consensus=False unless you explicitly want the consensus model)
-    raw_response = query_openrouter(messages, consensus=True)
-    logger.info(f"raw response from openrouter: {raw_response}")
-    # Remove any ```...``` fences (including ```json)
-    cleaned = re.sub(r"```[\s\S]*?```", '', raw_response or "")
-    cleaned = cleaned.strip()
+#     # Query the model (recommend consensus=False unless you explicitly want the consensus model)
+#     raw_response = query_openrouter(messages, consensus=True)
 
-    # Now parse the remaining text as JSON
-    try:
-        data = json.loads(cleaned)
-        logger.info(f"cleaned data: {data}")
-        return data
-    except json.JSONDecodeError as e:
-        logger.error("Error parsing JSON:", e)
-        return {}
+#     # Remove any ```...``` fences (including ```json)
+#     cleaned = re.sub(r"```[\s\S]*?```", '', raw_response or "")
+#     cleaned = cleaned.strip()
+
+#     # Now parse the remaining text as JSON
+#     try:
+#         data = json.loads(cleaned)
+#         return data
+#     except json.JSONDecodeError as e:
+#         print("Error parsing JSON:", e)
+#         return {}

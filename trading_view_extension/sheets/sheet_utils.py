@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import re
-
+import json
 import pandas as pd
 
 
@@ -502,21 +502,50 @@ def clear_output_range(output_start_range: str) -> None:
     except Exception as e:
         print(f"Error clearing output range: {e}")
 
+# def get_cot_questions(cot_questions_start_range):
+#     """
+#     Retrieves a list of CoT questions from the given range in the spreadsheet.
+    
+#     Args:
+#         cot_questions_start_range (str): The cell range in the Google Sheet (e.g., "CoT!B2:B8")
+        
+#     Returns:
+#         list: A list of question strings, one for each non-empty cell in the range.
+#     """
+#     # Retrieve the full range data (assumes get_full_range returns a list of lists)
+#     full_range = get_full_range(SPREADSHEET_ID, cot_questions_start_range)
+#     data = read_data(SPREADSHEET_ID, full_range)
+#     questions = [cell.strip() for row in data for cell in row if cell and cell.strip()]
+#     return questions
+
 def get_cot_questions(cot_questions_start_range):
     """
-    Retrieves a list of CoT questions from the given range in the spreadsheet.
+    Retrieves a list of CoT questions from a single cell in the spreadsheet.
     
     Args:
-        cot_questions_start_range (str): The cell range in the Google Sheet (e.g., "CoT!B2:B8")
+        cot_questions_start_range (str): The cell range in the Google Sheet (e.g., "CoT!B2")
         
     Returns:
-        list: A list of question strings, one for each non-empty cell in the range.
+        list: A list of question strings extracted from the JSON inside the cell.
     """
-    # Retrieve the full range data (assumes get_full_range returns a list of lists)
-    full_range = get_full_range(SPREADSHEET_ID, cot_questions_start_range)
-    data = read_data(SPREADSHEET_ID, full_range)
-    questions = [cell.strip() for row in data for cell in row if cell and cell.strip()]
-    return questions
+    # Read data from the single cell range
+    data = read_data(SPREADSHEET_ID, cot_questions_start_range)
+
+    if not data or not data[0]:  # Ensure the data exists
+        return []
+
+    try:
+        # Load JSON from the first cell in the range
+        json_data = json.loads(data[0][0])
+
+        # Extract "question" text from each dictionary in the list
+        questions = [q["question"] for q in json_data if "question" in q]
+
+        return questions
+
+    except (json.JSONDecodeError, TypeError):
+        print(f"Error parsing JSON from cell: {data[0][0]}")
+        return []  # Return empty list if JSON parsing fails
 
 def get_agent_analysis():
     full_range = get_full_range(SPREADSHEET_ID, MULTI_OUTPUT_START_RANGE)

@@ -161,8 +161,15 @@ MULTI_RESULT_START_RANGE = "MULTI-RUN!H2"
 ALL_ASSISTANTS_START_RANGE = "ASSISTANTS!B2"
 SPREADSHEET_ID = "1JYgYUtiU_esPVGJvFZVGHv-7MvT_TikTYPhIRk0q5WU"
 
-COT_PROMPT = "CoT!B1"
-COT_QUESTIONS_START_RANGE = "CoT!B2"
+# COT_PROMPT = "CoT!B1"
+# COT_QUESTIONS_START_RANGE = "CoT!B2"
+
+COT_PROMPT = "CoT!B4"
+COT_QUESTIONS_START_RANGE = "CoT!C4"
+
+# COT_AGENTS = "CoT!A:A"
+# COT_PROMPTs = "CoT!B:B"
+# COT_QUESTIONS = "CoTC:C"
 
 # OPENAI API Configuration
 OPENAI_API_KEY = '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' #mikegandia
@@ -177,11 +184,11 @@ GEMINI_API_KEY = 'AIzaSyCoibP3-1IRPcMjKIiGKBkN987qEsv71HA'
 OPENROUTER_API_KEY = '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'
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 # MODEL_NAME = "openai/o1"
-# MODEL_NAME = "openai/gpt-4o"
+MODEL_NAME = "openai/gpt-4o"
 # MODEL_NAME = "anthropic/claude-3.5-sonnet"
 # MODEL_NAME = "x-ai/grok-2-vision-1212" 
 # MODEL_NAME = "qwen/qwen-vl-plus:free"
-MODEL_NAME = "google/gemini-2.0-flash-001"
+# MODEL_NAME = "google/gemini-2.0-flash-001"
 # MODEL_NAME = "google/gemini-2.0-flash-thinking-exp:free"
 # MODEL_NAME = "google/gemini-2.0-pro-exp-02-05:free"
 # MODEL_NAME = "amazon/nova-pro-v1"
