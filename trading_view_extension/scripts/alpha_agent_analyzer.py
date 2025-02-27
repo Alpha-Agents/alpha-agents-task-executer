@@ -17,11 +17,11 @@ async def run_single_stock(job, asset: str, image_urls: list):
     prompt_range = COT_PROMPT
     questions_range = COT_QUESTIONS_START_RANGE
 
-    if job['agent']:
-        if job['agent'][0] in agents:
-            prompt_range, questions_range = agents[job['agent'][0]]
-    else:
-        logger.info(f"Agent not found using default agent")
+    agent = job.get("agent", "").strip()
+
+    # Use the agent if it exists in the dictionary, else default to "Specialists Agent"
+    agent_name = agent if agent in agents else "Specialists Agent"
+    prompt_range, questions_range = agents[agent_name]
 
     system_prompt = get_user_prompt(prompt_range)
     questions = get_cot_questions(questions_range)

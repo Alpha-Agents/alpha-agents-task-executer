@@ -184,20 +184,20 @@ GEMINI_API_KEY = 'AIzaSyCoibP3-1IRPcMjKIiGKBkN987qEsv71HA'
 OPENROUTER_API_KEY = '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'
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 # MODEL_NAME = "openai/o1"
-MODEL_NAME = "openai/gpt-4o"
+# MODEL_NAME = "openai/gpt-4o"
 # MODEL_NAME = "anthropic/claude-3.5-sonnet"
 # MODEL_NAME = "x-ai/grok-2-vision-1212" 
 # MODEL_NAME = "qwen/qwen-vl-plus:free"
-# MODEL_NAME = "google/gemini-2.0-flash-001"
+MODEL_NAME = "google/gemini-2.0-flash-001"
 # MODEL_NAME = "google/gemini-2.0-flash-thinking-exp:free"
 # MODEL_NAME = "google/gemini-2.0-pro-exp-02-05:free"
 # MODEL_NAME = "amazon/nova-pro-v1"
 
 # CONSENSUS_MODEL = "deepseek/deepseek-r1:free"
 # CONSENSUS_MODEL = "deepseek/deepseek-r1"
-CONSENSUS_MODEL = "google/gemini-2.0-pro-exp-02-05:free"
+CONSENSUS_MODEL = "openai/gpt-4o"
 CONSENSUS = True
-
+OBSERVATION_MODEL_NAME = "openai/gpt-4o"
 MAX_WORKERS = 10
 
 # IMAGE APIS

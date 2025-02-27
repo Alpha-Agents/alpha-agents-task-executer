@@ -2,6 +2,8 @@
 from services.openrouter_client import query_conversation, get_consensus
 from services.structured_output_service import StructuredOutputService
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
+from config import OBSERVATION_MODEL_NAME
+
 class Reasoner:
     def __init__(self, job, system_prompt, questions, image_urls):
         self.system_prompt = system_prompt
@@ -23,7 +25,12 @@ class Reasoner:
         for question in self.questions:
             self.conversation_history.append({"role": "user", "content": question})
             try:
-                response = query_conversation(self.conversation_history, self.image_urls)  # 🛠 FIX: await added
+                if question == self.questions[0]:  # This checks if it's the first question
+                    # Add special handling for first question if needed
+                    response = query_conversation(self.conversation_history, self.image_urls, specified_model=OBSERVATION_MODEL_NAME)
+                else:
+                    # Handling for subsequent questions
+                    response = query_conversation(self.conversation_history, self.image_urls)
             except Exception as e:
                 print(f"Error during conversation for question '{question}': {e}")
                 response = "Error"
@@ -35,17 +42,6 @@ class Reasoner:
             self.job["result"] = []
             self.job["status"] = "RUNNING"
             await self.sqs_queue_publisher.publish_task(self.job)
-
-            # self.conversation_history.append({"role": "user", "content": "Understand the images and provide me the current price in numbers of the given stock in the image, dont add any additional text. Example: 100.00, 2563.8, 98345.78"})
-            # try:
-            #     response = query_conversation(self.conversation_history, self.image_urls) 
-            # except Exception as e:
-            #     print(f"Error during conversation for question '{question}': {e}")
-            #     response = "Error"
-            # self.conversation_history.append({"role": "assistant", "content": response})
-
-            # summarized_msg = f""" For your context the above analisys is for {self.job['asset']} stock. The current price of the stock is {response}"""
-            # self.conversation_history.append({"role": "user", "content": summarized_msg})
 
         # After processing all questions, run the consensus step.
         consensus_response = get_consensus(self.conversation_history)
