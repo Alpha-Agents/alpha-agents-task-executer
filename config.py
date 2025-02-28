@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import boto3
 from dataclasses import dataclass
 from pathlib import Path
+from botocore.config import Config
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -93,7 +94,8 @@ sqs_client = boto3.client(
     'sqs',
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
+    region_name=AWS_REGION,
+    config=Config(connect_timeout=10, read_timeout=15) 
 )
 
 s3_client = boto3.client(
