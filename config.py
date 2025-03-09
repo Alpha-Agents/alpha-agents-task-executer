@@ -190,17 +190,20 @@ OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 # MODEL_NAME = "anthropic/claude-3.5-sonnet"
 # MODEL_NAME = "x-ai/grok-2-vision-1212" 
 # MODEL_NAME = "qwen/qwen-vl-plus:free"
-MODEL_NAME = "google/gemini-2.0-flash-001"
+# MODEL_NAME = "google/gemini-2.0-flash-001"
+MODEL_NAME = "anthropic/claude-3.7-sonnet:thinking"
 # MODEL_NAME = "google/gemini-2.0-flash-thinking-exp:free"
 # MODEL_NAME = "google/gemini-2.0-pro-exp-02-05:free"
 # MODEL_NAME = "amazon/nova-pro-v1"
 
+
+# OBSERVATION_MODEL_NAME = "google/gemini-2.0-flash-thinking-exp:free"
+OBSERVATION_MODEL_NAME = "openai/gpt-4o"
+# OBSERVATION_MODEL_NAME = "anthropic/claude-3.7-sonnet:thinking"
 # CONSENSUS_MODEL = "deepseek/deepseek-r1:free"
 # CONSENSUS_MODEL = "deepseek/deepseek-r1"
-CONSENSUS_MODEL = "openai/gpt-4o"
+CONSENSUS_MODEL = "google/gemini-2.0-flash-thinking-exp:free"
 CONSENSUS = True
-OBSERVATION_MODEL_NAME = "openai/gpt-4o"
-MAX_WORKERS = 10
 
 # IMAGE APIS
 IMAGE_HOST = 'cloudinary' #'imgbb'

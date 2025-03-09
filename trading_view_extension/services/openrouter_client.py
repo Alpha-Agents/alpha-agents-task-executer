@@ -22,7 +22,8 @@ def log_retry(retry_state):
     stop=stop_after_attempt(5),
     before_sleep=log_retry
 )
-def query_openrouter(messages, specified_model=None):
+async def query_openrouter(messages, specified_model=None):
+    
     model = specified_model or MODEL_NAME
 
     payload = {

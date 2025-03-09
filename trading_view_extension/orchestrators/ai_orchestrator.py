@@ -9,33 +9,28 @@ class AiOrchestrator:
 
     async def handle_job(self, job):
         logger.info(f"Processing job: {job}")
-
-        asset = job.get("asset")
         image_urls = job.get("s3_urls", [])
 
-        # ✅ Input Validation
-        if not asset:
-            raise ValueError("Missing asset in job")
         if not isinstance(image_urls, list):
             raise ValueError("image_urls must be a list")
 
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                consensus_response, trade_signal = await run_single_stock(job, asset, image_urls)
+                consensus_response, trade_signal, response_message_id = await run_single_stock(job, image_urls)
                 break
             except Exception as e:
                 logger.warning(f"Retry {attempt+1}/{max_retries} failed for job {job}: {e}")
                 if attempt == max_retries - 1:
-                    consensus_response, trade_signal = "AI Error", "Unknown"
+                    consensus_response, trade_signal, response_message_id = "AI Error", "Unknown", "error"
 
         job["status"] = "COMPLETED"
-        job["question"] = ""
-        job["response"] = ""
+        job["response"] = consensus_response
         job["result"] = trade_signal
         job["action_type"] = "processed"
+        job["message_id"] = response_message_id
 
         await self.sqs_queue_publisher.publish_task(job)
 
-        # ✅ Critical — Return Success Flag
+        #Critical — Return Success Flag
         return True

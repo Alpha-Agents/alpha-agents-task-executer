@@ -65,7 +65,7 @@ class SqsQueueConsumer(IQueueConsumer):
                 self.local_safe_store.pop(message_id, None)
 
         except Exception as e:
-            logger.error(f"❌ Processing crashed for message {message_id}: {e}")
+            logger.error(f"Processing crashed for message {message_id}: {e}")
             logger.error(f"⚠️ Message {message_id} will stay in safe store for manual recovery.")
 
     def process_message_body(self, message: dict):
@@ -86,7 +86,7 @@ class SqsQueueConsumer(IQueueConsumer):
         if result is None:
             raise ValueError(f"handle_job() returned None for message {message_id}")
 
-        logger.info(f"✅ handle_job() completed successfully for {message_id}, result: {result}")
+        logger.info(f"handle_job() completed successfully for {message_id}, result: {result}")
 
     def receive_messages(self, queue_url: str):
         try:
@@ -99,7 +99,7 @@ class SqsQueueConsumer(IQueueConsumer):
                 MessageAttributeNames=["All"]
             )
         except ssl.SSLError as ssl_error:
-            logger.error(f"🔴 SSL ERROR: {ssl_error}")
+            logger.error(f"SSL ERROR: {ssl_error}")
             return []
         except Exception as e:
             logger.error(f"Error receiving messages: {e}")
@@ -107,7 +107,7 @@ class SqsQueueConsumer(IQueueConsumer):
 
         messages = response.get("Messages", [])
         for message in messages:
-            logger.info(f"✅ Received Message ID: {message.get('MessageId')}")
+            logger.info(f"Received Message ID: {message.get('MessageId')}")
         return messages
 
     async def delete_message(self, queue_url: str, message: dict):
@@ -121,9 +121,9 @@ class SqsQueueConsumer(IQueueConsumer):
                 QueueUrl=queue_url,
                 ReceiptHandle=receipt_handle
             )
-            logger.info(f"✅ Immediately deleted message {message.get('MessageId')} from {queue_url}")
+            logger.info(f"Immediately deleted message {message.get('MessageId')} from {queue_url}")
         except Exception as e:
-            logger.error(f"❌ Failed to delete message {message.get('MessageId')}: {e}")
+            logger.error(f"Failed to delete message {message.get('MessageId')}: {e}")
 
     def stop_polling(self):
         self.shutdown_event.set()
@@ -133,12 +133,12 @@ class SqsQueueConsumer(IQueueConsumer):
         logger.info("Stopped polling and shut down worker threads.")
 
     def replay_safe_store(self):
-        logger.warning("🚨 Starting manual recovery from safe store (for crashed messages)")
+        logger.warning("Starting manual recovery from safe store (for crashed messages)")
         for message_id, message in list(self.local_safe_store.items()):
             try:
                 self.process_message_body(message)
                 with self.lock:
                     self.local_safe_store.pop(message_id, None)
-                logger.info(f"✅ Successfully recovered message {message_id}")
+                logger.info(f"Successfully recovered message {message_id}")
             except Exception as e:
-                logger.error(f"❌ Failed to recover message {message_id}: {e}")
+                logger.error(f"Failed to recover message {message_id}: {e}")

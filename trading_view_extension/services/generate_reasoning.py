@@ -1,64 +1,124 @@
 import asyncio
-from services.openrouter_client import query_conversation, get_consensus
+from services.openrouter_client import query_conversation, get_consensus, query_openrouter
 from services.structured_output_service import StructuredOutputService
-from config import OBSERVATION_MODEL_NAME, logger
-
+from config import OBSERVATION_MODEL_NAME, logger, CONSENSUS_MODEL
+from database.db_utilities import get_conversation_by_id, add_message, add_conversation, conversation_exists
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
+import uuid
+
 
 class Reasoner:
-    def __init__(self, job, system_prompt, questions, image_urls):
+    def __init__(self, job, system_prompt, image_urls=None, questions=None,message_id=None):
         self.system_prompt = system_prompt
         self.questions = questions
-        self.image_urls = image_urls
+        self.image_urls = image_urls or job.get('s3_urls', [])  # Use images from job if not explicitly provided
         self.job = job
         self.conversation_history = [{"role": "system", "content": system_prompt}]
+        self.message_id = message_id
         self.structured_service = StructuredOutputService()
         self.sqs_queue_publisher = SQSQueuePublisher()  # This makes Reasoner directly talk to SQS
 
+    async def run_reasoning(self, is_consensus=True):
+        if self.job['status'] == "PENDING":
+            if not conversation_exists(self.job['job_id']):
+                add_conversation(self.job['job_id'], [])
+                add_message(self.job['job_id'], {
+                    "message_id": uuid.uuid4().hex,
+                    "role": "system",
+                    "content": self.system_prompt
+                })
+            else:
+                logger.warning(f"Conversation already exists for job_id {self.job['job_id']}, skipping creation.")
 
-    async def run_reasoning(self):
-        if not self.image_urls:
-            raise ValueError("No images provided for reasoning")
+        self.conversation_history = get_conversation_by_id(self.job["job_id"])
+        user_instructions = self.job.get('user_instructions', '').strip()
 
-        for question in self.questions:
-            self.conversation_history.append({"role": "user", "content": question})
-            response = await self._query_with_retry(question)
+        combined_content = []
+        if user_instructions:
+            combined_content.append({
+                "type": "text",
+                "text": f"User Instructions: {user_instructions}"
+            })
+        if self.image_urls:
+            for url in self.image_urls:
+                combined_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": url}
+                })
+        self.conversation_history.append({
+            "role": "user",
+            "content": combined_content
+        })
+        add_message(self.job['job_id'], {
+            "message_id": uuid.uuid4().hex,
+            "role": "user",
+            "content": combined_content  # Store the combined list directly in the DB
+        })
 
-            self.conversation_history.append({"role": "assistant", "content": response})
+        consensus_response = None
 
-            # 💥 Immediately notify frontend (or any listener) via SQS
-            self.job["question"] = question
-            self.job["response"] = response
-            self.job["status"] = "RUNNING"
-            self.job["result"] = []
-            await self.sqs_queue_publisher.publish_task(self.job)
+        if is_consensus:
+            consensus_messages = self._prepare_consensus_messages()
 
-        # Final Consensus Processing
-        try:
-            consensus_response = get_consensus(self.conversation_history)
-        except Exception as e:
-            logger.error(f"Consensus generation failed: {e}")
-            consensus_response = "Consensus generation failed."
+            # Call OpenRouter for consensus
+            consensus_response = await query_openrouter(consensus_messages, specified_model=CONSENSUS_MODEL)
 
-        trade_signal = self.structured_service.get_trade_signal(consensus_response, self.job["asset"])
+            # Save the assistant's consensus response in the history
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": consensus_response
+            })
+            response_message_id = uuid.uuid4().hex
+            add_message(self.job['job_id'], {
+                "message_id": response_message_id,
+                "role": "assistant",
+                "content": consensus_response
+            })
 
-        return consensus_response, trade_signal
+        trade_signal_result = None
+        if self.job['status'] == "PENDING":
+            text_to_analyze = consensus_response if consensus_response else self.conversation_history[-1]["content"]
+            trade_signal_result = self.structured_service.get_trade_signal(text_to_analyze, self.job["asset"])
 
+        return consensus_response, trade_signal_result, response_message_id
 
-    async def _query_with_retry(self, question, max_retries=3):
-        for attempt in range(max_retries):
-            try:
-                if question == self.questions[0]:
-                    response = await asyncio.to_thread(query_conversation, self.conversation_history, self.image_urls, specified_model=OBSERVATION_MODEL_NAME)
-                else:
-                    response = await asyncio.to_thread(query_conversation, self.conversation_history, self.image_urls)
+    def _prepare_consensus_messages(self):
+        """
+        Prepares conversation history for consensus request.
+        - Removes `message_id` if present.
+        - Ensures it ends with a user message.
+        - Removes the final assistant message if necessary.
+        - Attaches images and user instructions if they exist.
+        """
+        consensus_messages = []
 
-                if response and response != "Error":
-                    return response
+        for msg in self.conversation_history:
+            content = msg.get("content")
+            if isinstance(content, dict) and "text" in content:
+                content = content["text"]
 
-                logger.warning(f"Invalid or empty response on attempt {attempt+1}")
-            except Exception as e:
-                logger.warning(f"Exception during query on attempt {attempt+1}: {e}")
+            consensus_messages.append({
+                "role": msg["role"],
+                "content": [{"type": "text", "text": content}]
+            })
 
-        logger.error(f"All retries failed for question: {question}")
-        return "AI Error: No valid response after retries"
+        if self.image_urls:
+            for i in range(len(consensus_messages) - 1, -1, -1):
+                if consensus_messages[i]["role"] == "user":
+                    for url in self.image_urls:
+                        consensus_messages[i]["content"].append(
+                            {"type": "image_url", "image_url": {"url": url}}
+                        )
+                    break
+
+        while consensus_messages and consensus_messages[-1]["role"] == "assistant":
+            consensus_messages.pop()
+
+        if not consensus_messages or consensus_messages[-1]["role"] != "user":
+            for i in range(len(consensus_messages) - 1, -1, -1):
+                if consensus_messages[i]["role"] == "user":
+                    user_msg = consensus_messages.pop(i)
+                    consensus_messages.append(user_msg)
+                    break
+
+        return consensus_messages
