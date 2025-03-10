@@ -28,7 +28,7 @@ class Reasoner:
                     "content": self.system_prompt
                 })
             else:
-                logger.warning(f"Conversation already exists for job_id {self.job['job_id']}, skipping creation.")
+                logger.info(f"Conversation already exists for job_id {self.job['job_id']}, skipping creation.")
 
         self.conversation_history = get_conversation_by_id(self.job["job_id"])
         user_instructions = self.job.get('user_instructions', '').strip()
