@@ -15,7 +15,7 @@ from config import (
     SELECTED_ASSISTANTS_RANGE, TAKE_IMAGE_RANGE, SEPARATED_RANGE, NUMBER_OF_IMAGES_RANGE, 
     USER_PROMPT_RANGE, OUTPUT_START_RANGE, MULTI_OUTPUT_START_RANGE, AUTO_TIME_FRAME_RANGE,
     AUTO_POSITION_RANGE, AUTO_STOP_LOSS_RANGE, AUTO_TAKE_PROFIT_RANGE, COT_QUESTIONS_START_RANGE, 
-    MULTI_RESULT_START_RANGE
+    MULTI_RESULT_START_RANGE, IS_CUSTOM_AGENT_RANGE
 )
 
 # Load credentials
@@ -502,22 +502,6 @@ def clear_output_range(output_start_range: str) -> None:
     except Exception as e:
         print(f"Error clearing output range: {e}")
 
-# def get_cot_questions(cot_questions_start_range):
-#     """
-#     Retrieves a list of CoT questions from the given range in the spreadsheet.
-    
-#     Args:
-#         cot_questions_start_range (str): The cell range in the Google Sheet (e.g., "CoT!B2:B8")
-        
-#     Returns:
-#         list: A list of question strings, one for each non-empty cell in the range.
-#     """
-#     # Retrieve the full range data (assumes get_full_range returns a list of lists)
-#     full_range = get_full_range(SPREADSHEET_ID, cot_questions_start_range)
-#     data = read_data(SPREADSHEET_ID, full_range)
-#     questions = [cell.strip() for row in data for cell in row if cell and cell.strip()]
-#     return questions
-
 def get_cot_questions(cot_questions_start_range):
     """
     Retrieves a list of CoT questions from a single cell in the spreadsheet.
@@ -630,6 +614,32 @@ def write_agent_results(symbol, result, row_offset):
     
     # Write the data to the computed range.
     write_data(SPREADSHEET_ID, target_range, data_to_write)
+
+def get_is_custom():
+    """
+    Reads a cell from the Google Sheet, e.g. 'TRUE' or 'FALSE',
+    returns True/False. Make sure your sheet has that cell.
+    """
+    data = read_data(SPREADSHEET_ID, IS_CUSTOM_AGENT_RANGE) 
+    if data and data[0]:
+        return data[0][0].strip().upper() == 'TRUE'
+    return False
+
+def get_data_string(prompt_range: str):
+    """
+    Reads the USER_PROMPT_RANGE from the spreadsheet and returns the user prompt as a string.
+
+    Returns:
+        str: The user prompt if available, otherwise an empty string.
+    """
+    # Read data from the specified range
+    user_prompt_data = read_data(SPREADSHEET_ID, prompt_range)
+
+    # Check if data exists and extract the first value, or return an empty string if empty
+    if user_prompt_data and user_prompt_data[0]:
+        return user_prompt_data[0][0]  # Extract the string from [["user prompt here"]]
+    else:
+        return ""
 
 
 def main():

@@ -1,0 +1,44 @@
+# --------------------------
+# General Configuration
+# --------------------------
+PORT=8000
+DATABASE_URL=postgresql://postgres_admin:TLYX0mxibUR1yakz@database-1.c7mcu4qq0ofd.us-east-1.rds.amazonaws.com:5432/ATS
+
+# --------------------------
+# Logging Configuration
+# --------------------------
+LOG_LEVEL=INFO
+LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+LOG_FILE=real_time_price_fetcher.log
+
+# --------------------------
+# AWS Configuration
+# --------------------------
+AWS_ACCESS_KEY_ID=AKIAYKFQQ7HHXOAFDDHW
+AWS_SECRET_ACCESS_KEY=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
+AWS_REGION=us-east-1
+
+# --------------------------
+# AWS SQS Queues Configuration
+# --------------------------
+SQS_INPUT_QUEUE_NAME=input_tasks.fifo
+SQS_INPUT_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/571600861647/input_tasks.fifo
+SQS_INPUT_QUEUE_ARN=arn:aws:sqs:us-east-1:571600861647:input_tasks.fifo
+
+SQS_OUTPUT_QUEUE_NAME=output_tasks.fifo
+SQS_OUTPUT_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/571600861647/output_tasks.fifo
+SQS_OUTPUT_QUEUE_ARN=arn:aws:sqs:us-east-1:571600861647:output_tasks.fifo
+
+# --------------------------
+# AWS S3 Configuration
+# --------------------------
+S3_BUCKET_NAME=web-extension-screenshots
+
+# --------------------------
+# AWS RDS Configuration
+# --------------------------
+RDS_ENDPOINT=your-rds-endpoint
+RDS_PORT=5432
+RDS_DB_NAME=your_rds_db_name
+RDS_USERNAME=your_rds_username
+RDS_PASSWORD=your_rds_password
