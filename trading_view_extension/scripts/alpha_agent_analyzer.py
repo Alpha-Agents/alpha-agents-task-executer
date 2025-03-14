@@ -57,8 +57,11 @@ async def analyze(job, image_urls: list):
         system_prompt = job.get("prompt")
         query = job.get("agent_query")
     else:
-        system_prompt = get_user_prompt("CoT!B4")
-        query = job.get("agent_query")
+        system_prompt = """Your role is to analyze stock charts with exceptional expertise. You will provide your analysis, your expert opinion on if you should BUY / SELL / WAIT.
+        You will provide a confidence score of your decision. And you will provide entry, profit target, and stop loss, for any BUY or SELL decision.
+        Note: The price will be highlighed on the right side as the same color as the indicator
+        Respond in markdown format."""
+        query = "Do you see any trade setups? How confident are you? Trade or wait?"
 
     if job.get("is_chat"):
         query = job.get("agent_query")
