@@ -1,6 +1,6 @@
 from config import logger
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
-from trading_view_extension.scripts.alpha_agent_analyzer import run_single_stock
+from trading_view_extension.scripts.alpha_agent_analyzer import analyze
 
 class AiOrchestrator:
     def __init__(self, sqs_queue_publisher: SQSQueuePublisher):
@@ -14,10 +14,10 @@ class AiOrchestrator:
         if not isinstance(image_urls, list):
             raise ValueError("image_urls must be a list")
 
-        max_retries = 3
+        max_retries = 1
         for attempt in range(max_retries):
             try:
-                consensus_response, trade_signal, response_message_id = await run_single_stock(job, image_urls)
+                consensus_response, trade_signal, response_message_id = await analyze(job, image_urls)
                 break
             except Exception as e:
                 logger.warning(f"Retry {attempt+1}/{max_retries} failed for job {job}: {e}")

@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2.extras import Json
-
+import json
 RDS_ENDPOINT = "database-1.c7mcu4qq0ofd.us-east-1.rds.amazonaws.com"
 RDS_PORT = 5432
 RDS_DB_NAME = "ATS"
@@ -28,6 +28,22 @@ def conversation_exists(job_id):
 
     return exists
 
+def update_trade_signal_db(job_id, trade_signal):
+    if conversation_exists(job_id):
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # Convert dict to JSON string
+        trade_signal_json = json.dumps(trade_signal)
+
+        cur.execute("""
+            INSERT INTO conversations (job_id, trade_signal)
+            VALUES (%s, %s)
+        """, (job_id, trade_signal_json))
+
+        conn.commit()
+        cur.close()
+        conn.close()
 
 def get_conversation_by_id(job_id):
     conn = get_connection()
