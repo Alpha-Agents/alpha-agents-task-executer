@@ -2,7 +2,7 @@ import asyncio
 from services.openrouter_client import query_conversation, get_consensus, query_openrouter
 from services.structured_output_service import StructuredOutputService
 from config import OBSERVATION_MODEL_NAME, logger, CONSENSUS_MODEL
-from database.db_utilities import get_conversation_by_id, add_message, update_trade_signal_db
+from database.db_utilities import add_message, update_trade_signal_db_and_symbol
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import uuid
 
@@ -58,6 +58,6 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
     trade_signal_result = None
     if is_trade_signal:
         trade_signal_result = StructuredOutputService().get_trade_signal(response, job["asset"])
-        # update_trade_signal_db(job.get("job_id"), trade_signal_result)
+        update_trade_signal_db_and_symbol(job.get("job_id"), trade_signal_result, job['asset'])
 
     return response, trade_signal_result, response_message_id

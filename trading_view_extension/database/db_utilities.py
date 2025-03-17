@@ -28,7 +28,7 @@ def conversation_exists(job_id):
 
     return exists
 
-def update_trade_signal_db(job_id, trade_signal):
+def update_trade_signal_db_and_symbol(job_id, trade_signal, symbol):
     if conversation_exists(job_id):
         conn = get_connection()
         cur = conn.cursor()
@@ -37,13 +37,15 @@ def update_trade_signal_db(job_id, trade_signal):
         trade_signal_json = json.dumps(trade_signal)
 
         cur.execute("""
-            INSERT INTO conversations (job_id, trade_signal)
-            VALUES (%s, %s)
-        """, (job_id, trade_signal_json))
+            UPDATE conversations 
+            SET trade_signal = %s, symbol = %s
+            WHERE job_id = %s
+        """, (trade_signal_json, symbol, job_id))
 
         conn.commit()
         cur.close()
         conn.close()
+
 
 def get_conversation_by_id(job_id):
     conn = get_connection()

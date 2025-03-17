@@ -4,7 +4,7 @@ import concurrent.futures
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from config import COT_PROMPT, COT_QUESTIONS_START_RANGE,logger
 from trading_view_extension.sheets.sheet_utils import get_user_prompt
-from database.db_utilities import get_conversation_by_id, update_trade_signal_db, add_conversation
+from database.db_utilities import get_conversation_by_id, add_conversation
 from services.generate_reasoning import generate_response
 
 # async def run_single_stock(job, image_urls: list):
