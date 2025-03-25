@@ -80,8 +80,13 @@ class SqsQueueConsumer(IQueueConsumer):
             logger.error(f"Invalid JSON format in message {message_id}")
             return
 
-        future = asyncio.run_coroutine_threadsafe(self.orchestrator.handle_job(job_data), self.main_event_loop)
-        result = future.result(timeout=300)
+        # future = asyncio.run_coroutine_threadsafe(self.orchestrator.handle_job(job_data), self.main_event_loop)
+        # result = future.result(timeout=300)
+
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        result = new_loop.run_until_complete(self.orchestrator.handle_job(job_data))
+        new_loop.close()
 
         if result is None:
             raise ValueError(f"handle_job() returned None for message {message_id}")

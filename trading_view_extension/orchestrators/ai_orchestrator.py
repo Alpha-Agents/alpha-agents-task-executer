@@ -1,6 +1,6 @@
 from config import logger
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
-from trading_view_extension.scripts.alpha_agent_analyzer import analyze
+from trading_view_extension.services.alpha_agent_analyzer import analyze
 
 class AiOrchestrator:
     def __init__(self, sqs_queue_publisher: SQSQueuePublisher):

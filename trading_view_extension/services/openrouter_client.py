@@ -41,22 +41,25 @@ def query_openrouter(messages, specified_model=None):
     response.raise_for_status()
 
     result = response.json()
+    cost_usd = (result["usage"]["prompt_tokens"] * 0.000003 + result["usage"]["completion_tokens"] * 0.000015)
+    logger.info(f"Price: {cost_usd}  Credits: {round(cost_usd*1000)} Usage: {result['usage']}")
+    credits = round(cost_usd*1000)
     content = result.get("choices", [{}])[0].get("message", {}).get("content")
 
     if not content:
         logger.error(f"Received empty response from OpenRouter: {result}")
-        return "AI Error: Empty Response"
+        return "AI Error: Empty Response", 0
 
     if isinstance(content, list):
         for part in content:
             if part.get("type") == "text":
-                return part.get("text")
-        return str(content)
+                return part.get("text"), credits
+        return str(content), credits
 
     if isinstance(content, str):
-        return content
+        return content, credits
 
-    return str(content)
+    return str(content),credits
 
 
 def query_conversation(conversation_history, image_urls, specified_model=None):

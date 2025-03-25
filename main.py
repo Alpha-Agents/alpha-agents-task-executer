@@ -6,7 +6,7 @@ import os
 async def main():
     iqp = SQSQueuePublisher()
     sqs_consumer = SqsQueueConsumer(iqp)
-    queue_url = "https://sqs.us-east-1.amazonaws.com/571600861647/input_tasks.fifo"
+    queue_url = "https://sqs.us-east-1.amazonaws.com/571600861647/input_tasks_prod.fifo"
 
     logger.info(f"Starting SQS Consumer loop on {queue_url}")
 

@@ -1,97 +1,79 @@
-import psycopg2
-from psycopg2.extras import Json
+from supabase import create_client, Client
 import json
-RDS_ENDPOINT = "database-1.c7mcu4qq0ofd.us-east-1.rds.amazonaws.com"
-RDS_PORT = 5432
-RDS_DB_NAME = "ATS"
-RDS_USERNAME = "postgres_admin"
-RDS_PASSWORD = "TLYX0mxibUR1yakz"
 
-def get_connection():
-    return psycopg2.connect(
-        host=RDS_ENDPOINT,
-        port=RDS_PORT,
-        database=RDS_DB_NAME,
-        user=RDS_USERNAME,
-        password=RDS_PASSWORD
-    )
+url = "https://xyddbslvgjfpekjuiumr.supabase.co"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZGRic2x2Z2pmcGVranVpdW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTA1OTcsImV4cCI6MjA1Nzk2NjU5N30.ir1ubc68BO65oylqlUgDEvnxqvk4mwy6t1RBfELpTbg"
+supabase: Client = create_client(url, key)
 
 def conversation_exists(job_id):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT 1 FROM conversations WHERE job_id = %s LIMIT 1", (job_id,))
-    exists = cur.fetchone() is not None
-
-    cur.close()
-    conn.close()
-
-    return exists
+    response = supabase.table("conversations").select("job_id").eq("job_id", job_id).limit(1).execute()
+    return len(response.data) > 0
 
 def update_trade_signal_db_and_symbol(job_id, trade_signal, symbol):
     if conversation_exists(job_id):
-        conn = get_connection()
-        cur = conn.cursor()
-
-        # Convert dict to JSON string
-        trade_signal_json = json.dumps(trade_signal)
-
-        cur.execute("""
-            UPDATE conversations 
-            SET trade_signal = %s, symbol = %s
-            WHERE job_id = %s
-        """, (trade_signal_json, symbol, job_id))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
+        supabase.table("conversations").update({
+            "trade_signal": trade_signal,
+            "symbol": symbol
+        }).eq("job_id", job_id).execute()
 
 def get_conversation_by_id(job_id):
-    conn = get_connection()
-    cur = conn.cursor()
+    response = supabase.table("conversations").select("conversation_history").eq("job_id", job_id).limit(1).execute()
 
-    cur.execute("SELECT conversation_history FROM conversations WHERE job_id = %s", (job_id,))
-    result = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if result is None:
+    if not response.data:
         raise ValueError(f"No conversation found for job_id {job_id}")
 
-    return result[0]  # This is the actual list of messages
-
+    return response.data[0]["conversation_history"]
 
 def add_message(job_id, new_message):
-    conn = get_connection()
-    cur = conn.cursor()
+    response = supabase.table("conversations").select("conversation_history").eq("job_id", job_id).limit(1).execute()
 
-    cur.execute("SELECT conversation_history FROM conversations WHERE job_id = %s", (job_id,))
-    result = cur.fetchone()
-    if not result:
+    if not response.data:
         raise ValueError(f"No conversation found for job_id {job_id}")
 
-    conversation_history = result[0]
+    conversation_history = response.data[0]["conversation_history"]
     conversation_history.append(new_message)
 
-    cur.execute("UPDATE conversations SET conversation_history = %s WHERE job_id = %s", (Json(conversation_history), job_id))
-    conn.commit()
-    cur.close()
-    conn.close()
+    supabase.table("conversations").update({
+        "conversation_history": conversation_history
+    }).eq("job_id", job_id).execute()
 
-def add_conversation(job_id, conversation_history):
+def add_conversation(job_id, conversation_history, user_email, symbol):
     if conversation_exists(job_id):
-        return  # Conversation already exists, no need to insert again
+        return
 
-    conn = get_connection()
-    cur = conn.cursor()
+    supabase.table("conversations").insert({
+        "job_id": job_id,
+        "conversation_history": conversation_history,
+        "user_email": user_email,
+        "symbol": symbol
+    }).execute()
 
-    cur.execute("""
-        INSERT INTO conversations (job_id, conversation_history)
-        VALUES (%s, %s)
-    """, (job_id, Json(conversation_history)))
+def deduct_user_credits(email: str, amount: int):
+    # Fetch user by email
+    response = supabase.table("web_users").select("monthly_credits", "extra_credits").eq("email_id", email).limit(1).execute()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+    if not response.data:
+        raise ValueError(f"No user found with email: {email}")
+
+    user = response.data[0]
+    monthly_credits = int(user.get("monthly_credits", 0))
+    extra_credits = int(user.get("extra_credits") or 0)
+
+    # Deduction logic using integers only
+    to_deduct = amount
+
+    if extra_credits >= to_deduct:
+        extra_credits -= to_deduct
+        to_deduct = 0
+    else:
+        to_deduct -= extra_credits
+        extra_credits = 0
+        monthly_credits -= to_deduct  # can go negative
+
+    # Update in DB
+    supabase.table("web_users").update({
+        "extra_credits": extra_credits,
+        "monthly_credits": monthly_credits
+    }).eq("email_id", email).execute()
+
+    print(f"[{email}] - {amount} credits → extra: {extra_credits}, monthly: {monthly_credits}")

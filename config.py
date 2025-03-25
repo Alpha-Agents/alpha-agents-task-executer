@@ -82,12 +82,12 @@ POLYGON_API_KEY = 'vVQsLiYKJTAnW4l4_qgx67RJMzTirVI8' # pt accnt polygon'
 
 PROJECT_ROOT = Path(__file__).parent / "trading_view_extension" 
 
-SHEETS_FOLDER = PROJECT_ROOT / "sheets"
-SERVICE_ACCOUNT_PATH = SHEETS_FOLDER / "service_account.json"# Initialize AWS clients
+# SHEETS_FOLDER = PROJECT_ROOT / "sheets"
+# SERVICE_ACCOUNT_PATH = SHEETS_FOLDER / "service_account.json"# Initialize AWS clients
 
-CHROME_DRIVER_PATH = PROJECT_ROOT / "screen_shot/chromedriver-mac-arm64/chromedriver"
-SCREENSHOTS_FOLDER = PROJECT_ROOT / "screen_shot/Screenshots"
-TEMP_SCREENSHOT_FOLDER = PROJECT_ROOT / "screen_shot/temp"
+# CHROME_DRIVER_PATH = PROJECT_ROOT / "screen_shot/chromedriver-mac-arm64/chromedriver"
+# SCREENSHOTS_FOLDER = PROJECT_ROOT / "screen_shot/Screenshots"
+# TEMP_SCREENSHOT_FOLDER = PROJECT_ROOT / "screen_shot/temp"
 DEBUG_PORT = "9223"
 
 sqs_client = boto3.client(
