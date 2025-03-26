@@ -4,7 +4,7 @@ import json
 import requests
 import logging
 from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep
-
+from pydantic import BaseModel, Field, ValidationError
 # Ensure parent is in path to access config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -41,9 +41,13 @@ def query_openrouter(messages, specified_model=None):
     response.raise_for_status()
 
     result = response.json()
-    cost_usd = (result["usage"]["prompt_tokens"] * 0.000003 + result["usage"]["completion_tokens"] * 0.000015)
-    logger.info(f"Price: {cost_usd}  Credits: {round(cost_usd*1000)} Usage: {result['usage']}")
-    credits = round(cost_usd*1000)
+    if model == MODEL_NAME:
+        cost_usd = (result["usage"]["prompt_tokens"] * 0.000003 + result["usage"]["completion_tokens"] * 0.000015)
+        credits = round(cost_usd*1000)
+    else:
+        cost_usd = (result["usage"]["prompt_tokens"]  * 0.0005 + result["usage"]["completion_tokens"] * 0.0015) / 1000
+        credits = round(cost_usd * 1000)
+    logger.info(f"{model} Price: {cost_usd}  Credits: {round(cost_usd*1000)} Usage: {result['usage']}")
     content = result.get("choices", [{}])[0].get("message", {}).get("content")
 
     if not content:
@@ -104,3 +108,42 @@ def get_consensus(conversation_history):
         })
 
     return query_openrouter(messages, specified_model=CONSENSUS_MODEL)
+
+class TradeSignal(BaseModel):
+    asset: str = Field(..., description="The asset or stock symbol, ex: XYZ")
+    action: str = Field(..., description="The trade action: BUY, SELL, WAIT, EXIT (if user is in a trade this is an option)")
+    entry_price: float | None = Field(None, description="The entry price if applicable")
+    stop_loss: float | None = Field(None, description="Stop loss price if applicable")
+    take_profit: float | None = Field(None, description="Take profit price if applicable")
+    confidence: float | None = Field(None, description="Confidence level from 0 to 10")
+    R2R: float | None = Field(None, description="Risk to reward value")
+
+def get_structured_trade_signal(user_text: str, asset: str, specified_model=None) -> tuple[dict | None, int]:
+    """
+    Calls OpenRouter to get a trade signal from user input and parses it into the TradeSignal model.
+    Returns (parsed_data_dict, credits_used) or (None, 0) if failed.
+    """
+    messages = [
+        {"role": "system", "content": [{"type": "text", "text": "Extract a structured trade signal from the user message. Use the following JSON structure as a template:\n\n" + json.dumps(TradeSignal.model_json_schema(), indent=2)}]},
+        {"role": "user", "content": [{"type": "text", "text": user_text}]}
+    ]
+
+    content, credits = query_openrouter(messages, specified_model="openai/o3-mini")
+
+    try:
+        # Parse raw JSON string first
+        parsed_json = json.loads(content)
+
+        # Validate with Pydantic
+        signal = TradeSignal(**parsed_json)
+
+        return signal.model_dump(), credits
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse content as JSON: {e}\nContent: {content}")
+    except ValidationError as ve:
+        logger.error(f"Validation error: {ve}\nContent: {content}")
+    except Exception as ex:
+        logger.error(f"Unexpected error: {ex}")
+
+    return None, credits

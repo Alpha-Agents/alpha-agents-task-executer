@@ -1,8 +1,8 @@
 import asyncio
-from services.openrouter_client import query_openrouter
+from trading_view_extension.services.openrouter_client import query_openrouter, get_structured_trade_signal
 from services.structured_output_service import StructuredOutputService
 from config import OBSERVATION_MODEL_NAME, logger, CONSENSUS_MODEL
-from trading_view_extension.database.db_utilities import add_message, update_trade_signal_db_and_symbol, deduct_user_credits
+from trading_view_extension.database.db_utilities import add_message, update_trade_signal, deduct_user_credits
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import uuid
 
@@ -21,6 +21,8 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
     Returns:
         tuple: (response, trade_signal)
     """
+    total_credits = 0
+    trade_signal_result = None
     # Ensure the system prompt is the first message, formatted properly as text.
     if not any(msg["role"] == "system" for msg in conversation_history):
         system_message = {"role": "system", "content": [{"type": "text", "text": system_prompt}]}
@@ -42,21 +44,21 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
     # Get response from the API using the conversation history directly.
     try:
         response, credits = query_openrouter(conversation_history)
+        total_credits = credits
+        conversation_history.append({"role": "assistant", "content": [{"type": "text", "text": response}]})
+        response_message_id = uuid.uuid4().hex
+        add_message(job['job_id'], {"message_id": response_message_id, "role": "assistant", "content": [{"type": "text", "text": response}]})
     except Exception as e:
         print(f"Error in API call: {e}")
         response = "Error occurred during processing."
-        credits = 0
+        total_credits = 0
+        return response, trade_signal_result, response_message_id
     
-    # Append the assistant's response as a new message.
-    conversation_history.append({"role": "assistant", "content": [{"type": "text", "text": response}]})
-    response_message_id = uuid.uuid4().hex
-    add_message(job['job_id'], {"message_id": response_message_id, "role": "assistant", "content": [{"type": "text", "text": response}]})
-    deduct_user_credits("shruti@gmail.com",credits)
-
     # Extract trade signal from the response if requested.
-    trade_signal_result = None
     if is_trade_signal:
-        trade_signal_result = StructuredOutputService().get_trade_signal(response, job["asset"])
-        update_trade_signal_db_and_symbol(job.get("job_id"), trade_signal_result, job['asset'])
-
+        trade_signal_result, credits = get_structured_trade_signal(response, job["asset"])
+        update_trade_signal(job.get("job_id"), trade_signal_result)
+        total_credits = credits+total_credits
+    
+    deduct_user_credits(job.get("email_id"),total_credits)
     return response, trade_signal_result, response_message_id

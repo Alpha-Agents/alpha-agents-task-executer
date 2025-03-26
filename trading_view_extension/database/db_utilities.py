@@ -9,11 +9,10 @@ def conversation_exists(job_id):
     response = supabase.table("conversations").select("job_id").eq("job_id", job_id).limit(1).execute()
     return len(response.data) > 0
 
-def update_trade_signal_db_and_symbol(job_id, trade_signal, symbol):
+def update_trade_signal(job_id, trade_signal):
     if conversation_exists(job_id):
         supabase.table("conversations").update({
-            "trade_signal": trade_signal,
-            "symbol": symbol
+            "trade_signal": trade_signal
         }).eq("job_id", job_id).execute()
 
 def get_conversation_by_id(job_id):

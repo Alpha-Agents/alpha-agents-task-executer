@@ -4,7 +4,7 @@ import concurrent.futures
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from config import COT_PROMPT, COT_QUESTIONS_START_RANGE,logger
 from trading_view_extension.database.db_utilities import get_conversation_by_id, add_conversation
-from services.generate_reasoning import generate_response
+from trading_view_extension.services.generate_reasoning import generate_response
 
 async def analyze(job, image_urls: list): 
     """
@@ -48,7 +48,7 @@ async def analyze(job, image_urls: list):
         add_conversation(
             job.get("job_id"),
             conversation_history,
-            "shruti@gmail.com",
+            job.get("email_id"),
             job.get("symbol")
         )
 
