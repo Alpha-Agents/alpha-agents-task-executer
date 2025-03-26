@@ -3,16 +3,18 @@ from config import logger
 from trading_view_extension.queue.sqs_queue_consumer import SqsQueueConsumer
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import os
+from dotenv import load_dotenv
+load_dotenv()
+SQS_INPUT_QUEUE_URL = os.getenv("SQS_INPUT_QUEUE_URL")
+
 async def main():
     iqp = SQSQueuePublisher()
     sqs_consumer = SqsQueueConsumer(iqp)
-    queue_url = "https://sqs.us-east-1.amazonaws.com/571600861647/input_tasks_prod.fifo"
-
-    logger.info(f"Starting SQS Consumer loop on {queue_url}")
+    logger.info(f"Starting SQS Consumer loop on {SQS_INPUT_QUEUE_URL}")
 
     while True:
         try:
-            sqs_consumer.start_polling(queue_url)
+            sqs_consumer.start_polling(SQS_INPUT_QUEUE_URL)
             await asyncio.sleep(float('inf'))  # Just to hold main alive, remove tight link to polling
 
         except Exception as e:

@@ -49,7 +49,7 @@ def add_conversation(job_id, conversation_history, user_email, symbol):
 
 def deduct_user_credits(email: str, amount: int):
     # Fetch user by email
-    response = supabase.table("web_users").select("monthly_credits", "extra_credits").eq("email_id", email).limit(1).execute()
+    response = supabase.table("users").select("monthly_credits", "extra_credits").eq("email_id", email).limit(1).execute()
 
     if not response.data:
         raise ValueError(f"No user found with email: {email}")
@@ -70,7 +70,7 @@ def deduct_user_credits(email: str, amount: int):
         monthly_credits -= to_deduct  # can go negative
 
     # Update in DB
-    supabase.table("web_users").update({
+    supabase.table("users").update({
         "extra_credits": extra_credits,
         "monthly_credits": monthly_credits
     }).eq("email_id", email).execute()

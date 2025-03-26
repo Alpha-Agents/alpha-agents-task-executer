@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import concurrent.futures
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-from config import COT_PROMPT, COT_QUESTIONS_START_RANGE,logger
+from config import DEFAULT_PROMPT, DEFAULT_QUERY
 from trading_view_extension.database.db_utilities import get_conversation_by_id, add_conversation
 from trading_view_extension.services.generate_reasoning import generate_response
 
@@ -17,11 +17,8 @@ async def analyze(job, image_urls: list):
         system_prompt = job.get("prompt")
         query = job.get("agent_query")
     else:
-        system_prompt = """Your role is to analyze stock charts with exceptional expertise. You will provide your analysis, your expert opinion on if you should BUY / SELL / WAIT.
-        You will provide a confidence score of your decision. And you will provide entry, profit target, and stop loss, for any BUY or SELL decision.
-        Note: The price will be highlighed on the right side as the same color as the indicator
-        Respond in markdown format."""
-        query = "Do you see any trade setups? How confident are you? Trade or wait?"
+        system_prompt = DEFAULT_PROMPT
+        query = DEFAULT_QUERY
 
     if job.get("is_chat"):
         query = job.get("agent_query")
@@ -39,7 +36,7 @@ async def analyze(job, image_urls: list):
             conversation_history,
             image_urls,
             message_id,
-            is_trade_signal=False,
+            is_trade_signal=True,
         )
     else:
         conversation_history = []
@@ -49,7 +46,7 @@ async def analyze(job, image_urls: list):
             job.get("job_id"),
             conversation_history,
             job.get("email_id"),
-            job.get("symbol")
+            job.get("asset")
         )
 
         response, trade_signal, response_message_id = generate_response(
