@@ -52,7 +52,7 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
         print(f"Error in API call: {e}")
         response = "Error occurred during processing."
         total_credits = 0
-        return response, trade_signal_result, response_message_id
+        return response, None, None
     
     # Extract trade signal from the response if requested.
     if is_trade_signal:

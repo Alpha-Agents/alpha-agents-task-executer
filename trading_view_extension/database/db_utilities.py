@@ -36,7 +36,7 @@ def add_message(job_id, new_message):
         "conversation_history": conversation_history
     }).eq("job_id", job_id).execute()
 
-def add_conversation(job_id, conversation_history, user_email, symbol):
+def add_conversation(job_id, conversation_history, user_email, symbol, agent):
     if conversation_exists(job_id):
         return
 
@@ -44,7 +44,8 @@ def add_conversation(job_id, conversation_history, user_email, symbol):
         "job_id": job_id,
         "conversation_history": conversation_history,
         "user_email": user_email,
-        "symbol": symbol
+        "symbol": symbol,
+        "agent": agent
     }).execute()
 
 def deduct_user_credits(email: str, amount: int):

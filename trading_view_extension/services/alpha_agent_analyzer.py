@@ -46,7 +46,8 @@ async def analyze(job, image_urls: list):
             job.get("job_id"),
             conversation_history,
             job.get("email_id"),
-            job.get("asset")
+            job.get("asset"),
+            job.get("agent")
         )
 
         response, trade_signal, response_message_id = generate_response(
