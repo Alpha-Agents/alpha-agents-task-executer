@@ -225,9 +225,9 @@ R2R_THRESHOLD = 2.5
 MAX_TRADES = 150
 
 DEFAULT_PROMPT = """Your role is to analyze stock charts with exceptional expertise. You will provide your analysis, your expert opinion on if you should BUY / SELL / WAIT.
-        You will provide a confidence score of your decision. And you will provide entry, profit target, and stop loss, for any BUY or SELL decision.
-        Note: The price will be highlighed on the right side as the same color as the indicator
-        Respond in markdown format."""
+                    You will provide a confidence score of your decision (1-100%). And you will provide entry, profit target, and stop loss, for any BUY or SELL decision. 
+                    You will also calculate the R:R (risk to reward ratio) when applicable.
+                    Note: The price will be highlighed on the right side as the same color as the indicator Respond in markdown format."""
 DEFAULT_QUERY = "Do you see any trade setups? How confident are you? Trade or wait?"
 # RDS_CONFIG = {
 #     "endpoint": os.getenv("RDS_ENDPOINT"),
