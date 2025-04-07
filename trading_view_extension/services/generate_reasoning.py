@@ -1,7 +1,6 @@
 import asyncio
 from trading_view_extension.services.openrouter_client import query_openrouter, get_structured_trade_signal
-from services.structured_output_service import StructuredOutputService
-from config import OBSERVATION_MODEL_NAME, logger, CONSENSUS_MODEL
+from config import logger
 from trading_view_extension.database.db_utilities import add_message, update_trade_signal, deduct_user_credits
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import uuid

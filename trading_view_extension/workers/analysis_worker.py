@@ -3,7 +3,6 @@ import json
 from config import logger, input_tasks_queue
 from trading_view_extension.queue.sqs_queue_consumer import SqsQueueConsumer
 from trading_view_extension.orchestrators.ai_orchestrator import AiOrchestrator
-from trading_view_extension.services.structured_output_service import StructuredOutputService
 
 class AnalysisWorker:
     """

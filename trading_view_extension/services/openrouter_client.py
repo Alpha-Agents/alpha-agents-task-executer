@@ -1,17 +1,18 @@
-import sys
 from pathlib import Path
 import json
 import requests
 import logging
-from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep
+from tenacity import retry, wait_exponential, stop_after_attempt
 from pydantic import BaseModel, Field, ValidationError
-# Ensure parent is in path to access config
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-
-from config import MODEL_NAME, CONSENSUS_MODEL, OPENROUTER_API_KEY, OPENROUTER_ENDPOINT, MAX_TOKENS
-
 logger = logging.getLogger("openrouter_client")
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
+MODEL_NAME = os.getenv("MODEL_NAME")
+CONSENSUS_MODEL = os.getenv("CONSENSUS_MODEL")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_ENDPOINT = os.getenv("OPENROUTER_ENDPOINT")
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", 1000))
 
 def log_retry(retry_state):
     logger.warning(f"Retrying OpenRouter API call (attempt {retry_state.attempt_number})...")

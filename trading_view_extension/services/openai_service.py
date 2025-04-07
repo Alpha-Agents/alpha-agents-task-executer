@@ -7,6 +7,11 @@ from openai import OpenAI
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config import MODEL, API_KEY
 import re
+import os
+from dotenv import load_dotenv
+load_dotenv()
+MODEL = os.getenv("MODEL")
+API_KEY = os.getenv("API_KEY")
 
 class OpenAIService:
     

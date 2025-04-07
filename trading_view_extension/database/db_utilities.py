@@ -1,9 +1,11 @@
 from supabase import create_client, Client
 import json
-
-url = "https://xyddbslvgjfpekjuiumr.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZGRic2x2Z2pmcGVranVpdW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTA1OTcsImV4cCI6MjA1Nzk2NjU5N30.ir1ubc68BO65oylqlUgDEvnxqvk4mwy6t1RBfELpTbg"
-supabase: Client = create_client(url, key)
+import os
+from dotenv import load_dotenv
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def conversation_exists(job_id):
     response = supabase.table("conversations").select("job_id").eq("job_id", job_id).limit(1).execute()
