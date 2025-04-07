@@ -5,7 +5,7 @@ from trading_view_extension.database.db_utilities import add_message, update_tra
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import uuid
 
-def generate_response(job, system_prompt, query, conversation_history, show_query,image_urls=None, message_id=None, is_trade_signal=True, show_query=True):
+def generate_response(job, system_prompt, query, conversation_history, show_query,image_urls=None, message_id=None, is_trade_signal=True):
     """
     Process a reasoning conversation for the given symbol and parameters.
     
