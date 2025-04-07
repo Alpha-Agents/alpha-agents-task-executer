@@ -12,7 +12,7 @@ async def analyze(job, image_urls: list):
     Assumes image URLs have already been captured and uploaded.
     Initializes a Reasoner with the common parameters and prints the consensus response and trade signal.
     """
-
+    show_query = True
     if job.get("agent") == "custom": 
         system_prompt = job.get("prompt")
         query = job.get("agent_query")
@@ -24,6 +24,8 @@ async def analyze(job, image_urls: list):
         query = job.get("agent_query")
         if query == "":
             query = "Consider the new images."
+            show_query = False
+
         conversation_history = [
             {key: value for key, value in message.items() if key != "message_id"}
             for message in get_conversation_by_id(job.get("job_id"))
@@ -37,6 +39,7 @@ async def analyze(job, image_urls: list):
             image_urls,
             message_id,
             is_trade_signal=True,
+            show_query
         )
     else:
         conversation_history = []
@@ -57,7 +60,8 @@ async def analyze(job, image_urls: list):
             conversation_history,
             image_urls,
             message_id = None,
-            is_trade_signal=True
+            is_trade_signal=True,
+            show_query
         )
 
     # print("=" * 80)

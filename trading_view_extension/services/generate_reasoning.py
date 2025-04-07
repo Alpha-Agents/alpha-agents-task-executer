@@ -5,7 +5,7 @@ from trading_view_extension.database.db_utilities import add_message, update_tra
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
 import uuid
 
-def generate_response(job, system_prompt, query, conversation_history, image_urls=None, message_id=None, is_trade_signal=True):
+def generate_response(job, system_prompt, query, conversation_history, image_urls=None, message_id=None, is_trade_signal=True, show_query=True):
     """
     Process a reasoning conversation for the given symbol and parameters.
     
@@ -25,7 +25,7 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
     # Ensure the system prompt is the first message, formatted properly as text.
     if not any(msg["role"] == "system" for msg in conversation_history):
         system_message = {"role": "system", "content": [{"type": "text", "text": system_prompt}]}
-        add_message(job['job_id'], {"message_id": uuid.uuid4().hex, "role": "system", "content": [{"type": "text", "text": system_prompt}]})
+        add_message(job['job_id'], {"message_id": uuid.uuid4().hex, "role": "system", "content": [{"type": "text", "text": system_prompt}], "show_query": True})
         conversation_history.insert(0, system_message)
 
     # Build content for the new user message, including text and images.
@@ -36,9 +36,9 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
     # Append the user message with both text and images.
     conversation_history.append({"role": "user", "content": content})
     if message_id:
-        add_message(job['job_id'], {"message_id": message_id, "role": "user", "content": content})
+        add_message(job['job_id'], {"message_id": message_id, "role": "user", "content": content, "show_query": show_query})
     else: 
-        add_message(job['job_id'], {"message_id": uuid.uuid4().hex, "role": "user", "content": content})
+        add_message(job['job_id'], {"message_id": uuid.uuid4().hex, "role": "user", "content": content, "show_query": show_query})
 
     # Get response from the API using the conversation history directly.
     try:
@@ -46,7 +46,7 @@ def generate_response(job, system_prompt, query, conversation_history, image_url
         total_credits = credits
         conversation_history.append({"role": "assistant", "content": [{"type": "text", "text": response}]})
         response_message_id = uuid.uuid4().hex
-        add_message(job['job_id'], {"message_id": response_message_id, "role": "assistant", "content": [{"type": "text", "text": response}]})
+        add_message(job['job_id'], {"message_id": response_message_id, "role": "assistant", "content": [{"type": "text", "text": response}], "show_query": True})
     except Exception as e:
         print(f"Error in API call: {e}")
         response = "Error occurred during processing."
