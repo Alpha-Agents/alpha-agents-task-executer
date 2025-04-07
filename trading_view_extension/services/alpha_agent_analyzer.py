@@ -42,6 +42,10 @@ async def analyze(job, image_urls: list):
             is_trade_signal=True,
         )
     else:
+        if job.get("agent") == "custom":
+            show_query = True
+        else:
+            show_query = False
         conversation_history = []
         additional_info = job.get("user_instructions")
         system_prompt = system_prompt + "\n" + additional_info
