@@ -36,10 +36,10 @@ async def analyze(job, image_urls: list):
             system_prompt,
             query,
             conversation_history,
+            show_query,
             image_urls,
             message_id,
             is_trade_signal=True,
-            show_query
         )
     else:
         conversation_history = []
@@ -58,10 +58,10 @@ async def analyze(job, image_urls: list):
             system_prompt,
             query,
             conversation_history,
+            show_query,
             image_urls,
             message_id = None,
             is_trade_signal=True,
-            show_query
         )
 
     # print("=" * 80)
