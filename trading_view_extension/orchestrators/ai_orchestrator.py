@@ -14,7 +14,7 @@ class AiOrchestrator:
         if not isinstance(image_urls, list):
             raise ValueError("image_urls must be a list")
 
-        max_retries = 1
+        max_retries = 3
         for attempt in range(max_retries):
             try:
                 consensus_response, trade_signal, response_message_id = await analyze(job, image_urls)
