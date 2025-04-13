@@ -13,7 +13,7 @@ async def analyze(job, image_urls: list):
     Initializes a Reasoner with the common parameters and prints the consensus response and trade signal.
     """
     show_query = True
-    if job.get("agent") == "custom": 
+    if job.get("agent").lower() == "custom": 
         system_prompt = job.get("prompt")
         query = job.get("agent_query")
     else:
@@ -42,7 +42,7 @@ async def analyze(job, image_urls: list):
             is_trade_signal=True,
         )
     else:
-        if job.get("agent") == "custom":
+        if job.get("agent").lower() == "custom":
             show_query = True
         else:
             show_query = False
