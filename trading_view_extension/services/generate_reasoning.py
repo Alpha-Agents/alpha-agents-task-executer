@@ -3,9 +3,14 @@ from trading_view_extension.services.openrouter_client import query_openrouter, 
 from config import logger
 from trading_view_extension.database.db_utilities import add_message, update_trade_signal, deduct_user_credits
 from trading_view_extension.queue.sqs_queue_publisher import SQSQueuePublisher
+from config import PERPLEXITY_PROMPT
 import uuid
-
-def generate_response(job, system_prompt, query, conversation_history, show_query,image_urls=None, message_id=None, is_trade_signal=True):
+import os
+from dotenv import load_dotenv
+load_dotenv()
+DEEP_RESEARCH_PERPLEXCITY = os.getenv("DEEP_RESEARCH_PERPLEXCITY")
+DEEP_RESEARCH_GEMINI = os.getenv("DEEP_RESEARCH_GEMINI")
+def generate_response(job, system_prompt, query, conversation_history, show_query, image_urls=None, message_id=None, is_trade_signal=True):
     """
     Process a reasoning conversation for the given symbol and parameters.
     
@@ -28,6 +33,13 @@ def generate_response(job, system_prompt, query, conversation_history, show_quer
         add_message(job['job_id'], {"message_id": uuid.uuid4().hex, "role": "system", "content": [{"type": "text", "text": system_prompt}], "show_query": True})
         conversation_history.insert(0, system_message)
 
+    if job.get("deep_research") != []:
+        if job.get("deep_research")[0] == "perplexity":
+            deep_research_model = DEEP_RESEARCH_PERPLEXCITY
+        elif job.get("deep_research")[0] == "gemini":
+            deep_research_model = DEEP_RESEARCH_GEMINI
+    else:
+        deep_research_model = None
     # Build content for the new user message, including text and images.
     content = [{"type": "text", "text": query}]
     if image_urls:
@@ -42,7 +54,7 @@ def generate_response(job, system_prompt, query, conversation_history, show_quer
 
     # Get response from the API using the conversation history directly.
     try:
-        response, credits = query_openrouter(conversation_history)
+        response, credits = query_openrouter(conversation_history, deep_research_model)
         total_credits = credits
         conversation_history.append({"role": "assistant", "content": [{"type": "text", "text": response}]})
         response_message_id = uuid.uuid4().hex

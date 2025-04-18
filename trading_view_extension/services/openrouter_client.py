@@ -13,6 +13,8 @@ CONSENSUS_MODEL = os.getenv("CONSENSUS_MODEL")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_ENDPOINT = os.getenv("OPENROUTER_ENDPOINT")
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", 1000))
+DEEP_RESEARCH_PERPLEXCITY = os.getenv("DEEP_RESEARCH_PERPLEXCITY")
+DEEP_RESEARCH_GEMINI = os.getenv("DEEP_RESEARCH_GEMINI")
 
 def log_retry(retry_state):
     logger.warning(f"Retrying OpenRouter API call (attempt {retry_state.attempt_number})...")
@@ -44,10 +46,14 @@ def query_openrouter(messages, specified_model=None):
     result = response.json()
     if model == MODEL_NAME:
         cost_usd = (result["usage"]["prompt_tokens"] * 0.000003 + result["usage"]["completion_tokens"] * 0.000015)
-        credits = round(cost_usd*1000)
+    elif model == DEEP_RESEARCH_PERPLEXCITY:   
+        cost_usd = (result["usage"]["prompt_tokens"] * 0.000002 + result["usage"]["completion_tokens"] * 0.000008)
+    elif model == DEEP_RESEARCH_GEMINI:   
+        cost_usd = (result["usage"]["prompt_tokens"] * 0.00000125 + result["usage"]["completion_tokens"] * 0.00001 + result.get("usage", {}).get("image_count", 0) * 0.00516)
     else:
         cost_usd = (result["usage"]["prompt_tokens"]  * 0.0005 + result["usage"]["completion_tokens"] * 0.0015) / 1000
-        credits = round(cost_usd * 1000)
+        
+    credits = round(cost_usd * 1000)
     logger.info(f"{model} Price: {cost_usd}  Credits: {round(cost_usd*1000)} Usage: {result['usage']}")
     content = result.get("choices", [{}])[0].get("message", {}).get("content")
 
