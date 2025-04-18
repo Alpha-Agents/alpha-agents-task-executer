@@ -1,0 +1,42 @@
+name: Deploy to AWS EC2 
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Debug Partial Key (Safe)
+      run: |
+        echo "First few lines of key:"
+        echo "${{ secrets.EC2_SSH_KEY }}" | head -n 5
+        echo "..."
+        echo "Last few lines of key:"
+        echo "${{ secrets.EC2_SSH_KEY }}" | tail -n 5
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master    # ✅ Correct use of `uses`
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd ~/alpha-agents-task-executer
+          git pull origin main
+          
+          echo "Killing existing main.py process (if running)..."
+          pkill -f main.py || echo "No process to kill"
+
+          echo "Starting app with nohup..."
+          # nohup python3 main.py > output.log 2>&1 &
+
+          echo "Deployment complete."
+          
